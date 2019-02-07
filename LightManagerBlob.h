@@ -116,6 +116,8 @@ enum LightKeyNames{
 	LightKeyCfgOutm		= (1 << 3),
 	LightKeyCfgCurve	= (1 << 4),
 	LightKeyCfgActs		= (1 << 5),
+	//
+	LightKeyCfgAll		= 0x3F,
 };
 
 
@@ -168,7 +170,6 @@ struct __packed LightCfgData_t{
 	LightEvtFlags evtFlagMask;
 	LightAlsData_t alsData;
   	LightOutData_t outData;
-  	uint32_t keys;
 };
 
 
