@@ -11,6 +11,7 @@
 
 #include "unity.h"
 #include "LightManager.h"
+#include "JsonParserBlob.h"
 
 //------------------------------------------------------------------------------------
 //-- REQUIRED HEADERS & COMPONENTS FOR TESTING ---------------------------------------
@@ -107,7 +108,7 @@ TEST_CASE("JSON support .........................", "[LightManager]"){
 	// solicita la configuración mediante un GetRequest
 	Blob::GetRequest_t* greq = new Blob::GetRequest_t(1);
 	TEST_ASSERT_NOT_NULL(greq);
-	cJSON* jreq = JSON::parseGetRequest(*greq);
+	cJSON* jreq = JsonParser::getJsonFromObj(*greq);
 	TEST_ASSERT_NOT_NULL(jreq);
 	msg = cJSON_Print(jreq);
 	TEST_ASSERT_NOT_NULL(msg);
@@ -134,7 +135,7 @@ TEST_CASE("JSON support .........................", "[LightManager]"){
 	// solicita la configuración mediante un GetRequest
 	greq = new Blob::GetRequest_t(2);
 	TEST_ASSERT_NOT_NULL(greq);
-	jreq = JSON::parseGetRequest(*greq);
+	jreq = JsonParser::getJsonFromObj(*greq);
 	TEST_ASSERT_NOT_NULL(jreq);
 	msg = cJSON_Print(jreq);
 	TEST_ASSERT_NOT_NULL(msg);
@@ -159,35 +160,34 @@ TEST_CASE("JSON support .........................", "[LightManager]"){
 	s_test_done = false;
 
 	// actualiza la configuración mediante un SetRequest
-	Blob::LightCfgData_t cfg;
-	cfg.updFlagMask=1;
-	cfg.evtFlagMask=7;
-	cfg.alsData.lux = {200,1000,50};
-	cfg.outData.mode=17;
-	cfg.outData.curve.samples=11;
+	Blob::SetRequest_t<Blob::LightCfgData_t> req;
+	req.idTrans = 3;
+	req.data.updFlagMask=1;
+	req.data.evtFlagMask=7;
+	req.data.alsData.lux = {200,1000,50};
+	req.data.outData.mode=17;
+	req.data.outData.curve.samples=11;
 	uint8_t def_data[] = {7,15,20,23,30,35,40,45,51,57,60};
 	for(int i=0;i<11;i++){
-		cfg.outData.curve.data[i] = def_data[i];
+		req.data.outData.curve.data[i] = def_data[i];
 	}
-	cfg.outData.numActions=2;
-	cfg.outData.actions[0].id=0;							//!< Identificador de la acción
-	cfg.outData.actions[0].flags=524415;				//!< Flags de control de la acción a realizar
-	cfg.outData.actions[0].date=0;						//!< Fecha ddMM para activar la acción
-	cfg.outData.actions[0].time=1440; 						//!< Hora fija de activación (min. día)
-	cfg.outData.actions[0].astCorr=0;						//!< Corrección sobre el hito astronómico en caso de estar habilitado
-	cfg.outData.actions[0].luxLevel={0,300,50};				//!< Nivel de luminosidad a partir de la cual se activará
-	cfg.outData.actions[0].outValue=100;
-	cfg.outData.actions[1].id=0;							//!< Identificador de la acción
-	cfg.outData.actions[1].flags=524415;				//!< Flags de control de la acción a realizar
-	cfg.outData.actions[1].date=0;						//!< Fecha ddMM para activar la acción
-	cfg.outData.actions[1].time=1440; 						//!< Hora fija de activación (min. día)
-	cfg.outData.actions[1].astCorr=0;						//!< Corrección sobre el hito astronómico en caso de estar habilitado
-	cfg.outData.actions[1].luxLevel={700,250000,50};				//!< Nivel de luminosidad a partir de la cual se activará
-	cfg.outData.actions[1].outValue=0;
+	req.data.outData.numActions=2;
+	req.data.outData.actions[0].id=0;							//!< Identificador de la acción
+	req.data.outData.actions[0].flags=524415;				//!< Flags de control de la acción a realizar
+	req.data.outData.actions[0].date=0;						//!< Fecha ddMM para activar la acción
+	req.data.outData.actions[0].time=1440; 						//!< Hora fija de activación (min. día)
+	req.data.outData.actions[0].astCorr=0;						//!< Corrección sobre el hito astronómico en caso de estar habilitado
+	req.data.outData.actions[0].luxLevel={0,300,50};				//!< Nivel de luminosidad a partir de la cual se activará
+	req.data.outData.actions[0].outValue=100;
+	req.data.outData.actions[1].id=0;							//!< Identificador de la acción
+	req.data.outData.actions[1].flags=524415;				//!< Flags de control de la acción a realizar
+	req.data.outData.actions[1].date=0;						//!< Fecha ddMM para activar la acción
+	req.data.outData.actions[1].time=1440; 						//!< Hora fija de activación (min. día)
+	req.data.outData.actions[1].astCorr=0;						//!< Corrección sobre el hito astronómico en caso de estar habilitado
+	req.data.outData.actions[1].luxLevel={700,250000,50};				//!< Nivel de luminosidad a partir de la cual se activará
+	req.data.outData.actions[1].outValue=0;
 
-	cJSON* light = LightManager::encodeCfg(cfg);
-	TEST_ASSERT_NOT_NULL(light);
-	jreq = JSON::parseSetRequest(3, "light", light, Blob::LightKeyCfgAll);
+	jreq = JsonParser::getJsonFromSetRequest(req, JsonParser::p_data);
 	TEST_ASSERT_NOT_NULL(jreq);
 	msg = cJSON_Print(jreq);
 	TEST_ASSERT_NOT_NULL(msg);
@@ -360,7 +360,7 @@ static void subscriptionCb(const char* topic, void* msg, uint16_t msg_len){
 		DEBUG_TRACE_I(_EXPR_, _MODULE_, "Formando objeto JSON a partir de objeto Blob...");
 		if(MQ::MQClient::isTokenRoot(topic, "stat/cfg")){
 			if(msg_len == sizeof(Blob::Response_t<Blob::LightCfgData_t>)){
-				cJSON* obj = LightManager::encodeCfgResponse(*((Blob::Response_t<Blob::LightCfgData_t>*)msg));
+				cJSON* obj = JsonParser::getJsonFromResponse(*((Blob::Response_t<Blob::LightCfgData_t>*)msg));
 				if(obj){
 					char* sobj = cJSON_Print(obj);
 					cJSON_Delete(obj);
@@ -369,7 +369,7 @@ static void subscriptionCb(const char* topic, void* msg, uint16_t msg_len){
 				}
 			}
 			else if(msg_len == sizeof(Blob::LightCfgData_t)){
-				cJSON* obj = LightManager::encodeCfg(*((Blob::LightCfgData_t*)msg));
+				cJSON* obj = JsonParser::getJsonFromObj(*((Blob::LightCfgData_t*)msg));
 				if(obj){
 					char* sobj = cJSON_Print(obj);
 					cJSON_Delete(obj);
@@ -381,7 +381,7 @@ static void subscriptionCb(const char* topic, void* msg, uint16_t msg_len){
 		}
 		else if(MQ::MQClient::isTokenRoot(topic, "stat/value")){
 			if(msg_len == sizeof(Blob::Response_t<Blob::LightStatData_t>)){
-				cJSON* obj = LightManager::encodeStatResponse(*((Blob::Response_t<Blob::LightStatData_t>*)msg));
+				cJSON* obj = JsonParser::getJsonFromResponse(*((Blob::Response_t<Blob::LightStatData_t>*)msg));
 				if(obj){
 					char* sobj = cJSON_Print(obj);
 					cJSON_Delete(obj);
@@ -390,7 +390,7 @@ static void subscriptionCb(const char* topic, void* msg, uint16_t msg_len){
 				}
 			}
 			else if(msg_len == sizeof(Blob::LightStatData_t)){
-				cJSON* obj = LightManager::encodeStat(*((Blob::LightStatData_t*)msg));
+				cJSON* obj = JsonParser::getJsonFromObj(*((Blob::LightStatData_t*)msg));
 				if(obj){
 					char* sobj = cJSON_Print(obj);
 					cJSON_Delete(obj);
@@ -402,7 +402,7 @@ static void subscriptionCb(const char* topic, void* msg, uint16_t msg_len){
 		else if(MQ::MQClient::isTokenRoot(topic, "stat/boot")){
 			if(msg_len == sizeof(Blob::LightBootData_t)){
 				Blob::LightBootData_t* boot = (Blob::LightBootData_t*)msg;
-				cJSON* obj = LightManager::encodeBoot(*((Blob::LightBootData_t*)msg));
+				cJSON* obj = JsonParser::getJsonFromObj(*((Blob::LightBootData_t*)msg));
 				if(obj){
 					char* sobj = cJSON_Print(obj);
 					cJSON_Delete(obj);

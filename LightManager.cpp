@@ -94,7 +94,7 @@ void LightManager::subscriptionCb(const char* topic, void* msg, uint16_t msg_len
 		if(_json_supported){
 			req = (Blob::SetRequest_t<Blob::LightCfgData_t>*)Heap::memAlloc(sizeof(Blob::SetRequest_t<Blob::LightCfgData_t>));
 			MBED_ASSERT(req);
-			if(!(json_decoded = decodeSetRequest(*req, (char*)msg))){
+			if(!(json_decoded = JsonParser::getSetRequestFromJson(*req, (char*)msg))){
 				Heap::memFree(req);
 				DEBUG_TRACE_W(_EXPR_, _MODULE_, "ERR_JSON. Decodificando el mensaje");
 			}
@@ -139,7 +139,7 @@ void LightManager::subscriptionCb(const char* topic, void* msg, uint16_t msg_len
 		if(_json_supported){
 			req = (Blob::SetRequest_t<Blob::LightStatData_t>*)Heap::memAlloc(sizeof(Blob::SetRequest_t<Blob::LightStatData_t>));
 			MBED_ASSERT(req);
-			if(!(json_decoded = _decodeSetReqValue(*req, (char*)msg))){
+			if(!(json_decoded = JsonParser::getSetRequestFromJson(*req, (char*)msg))){
 				Heap::memFree(req);
 				DEBUG_TRACE_W(_EXPR_, _MODULE_, "ERR_JSON. Decodificando el mensaje");
 			}
@@ -184,7 +184,7 @@ void LightManager::subscriptionCb(const char* topic, void* msg, uint16_t msg_len
 		if(_json_supported){
 			req = (Blob::LightLuxLevel*)Heap::memAlloc(sizeof(Blob::LightLuxLevel));
 			MBED_ASSERT(req);
-			if(!(json_decoded = _decodeSetLux(*req, (char*)msg))){
+			if(!(json_decoded = JsonParser::getObjFromJson(*req, (char*)msg))){
 				Heap::memFree(req);
 				DEBUG_TRACE_W(_EXPR_, _MODULE_, "ERR_JSON. Decodificando el mensaje");
 			}
@@ -229,7 +229,7 @@ void LightManager::subscriptionCb(const char* topic, void* msg, uint16_t msg_len
 		if(_json_supported){
 			req = (Blob::AstCalStatData_t*)Heap::memAlloc(sizeof(Blob::AstCalStatData_t));
 			MBED_ASSERT(req);
-			if(!(json_decoded = _decodeSetTime(*req, (char*)msg))){
+			if(!(json_decoded = JsonParser::getObjFromJson(*req, (char*)msg))){
 				Heap::memFree(req);
 				DEBUG_TRACE_W(_EXPR_, _MODULE_, "ERR_JSON. Decodificando el mensaje");
 			}
@@ -274,7 +274,7 @@ void LightManager::subscriptionCb(const char* topic, void* msg, uint16_t msg_len
         if(_json_supported){
 			req = (Blob::GetRequest_t*)Heap::memAlloc(sizeof(Blob::GetRequest_t));
 			MBED_ASSERT(req);
-			if(!(json_decoded = JSON::decodeGetRequest(*req, (char*)msg))){
+			if(!(json_decoded = JsonParser::getGetRequestFromJson(*req, (char*)msg))){
 				Heap::memFree(req);
 			}
         }
@@ -387,7 +387,7 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 				Blob::Response_t<Blob::LightCfgData_t>* resp = new Blob::Response_t<Blob::LightCfgData_t>(req->idTrans, req->_error, _lightdata.cfg);
 
 				if(_json_supported){
-					cJSON* jresp = encodeCfgResponse(*resp);
+					cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
 					if(jresp){
 						char* jmsg = cJSON_Print(jresp);
 						cJSON_Delete(jresp);
@@ -418,7 +418,7 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 				Blob::Response_t<Blob::LightCfgData_t>* resp = new Blob::Response_t<Blob::LightCfgData_t>(req->idTrans, req->_error, _lightdata.cfg);
 
 				if(_json_supported){
-					cJSON* jresp = encodeCfgResponse(*resp);
+					cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
 					if(jresp){
 						char* jmsg = cJSON_Print(jresp);
 						cJSON_Delete(jresp);
@@ -480,7 +480,7 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 			Blob::Response_t<Blob::LightStatData_t>* resp = new Blob::Response_t<Blob::LightStatData_t>(req->idTrans, req->_error, _lightdata.stat);
 
 			if(_json_supported){
-				cJSON* jresp = encodeStatResponse(*resp);
+				cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
 				if(jresp){
 					char* jmsg = cJSON_Print(jresp);
 					cJSON_Delete(jresp);
@@ -511,7 +511,7 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 			Blob::Response_t<Blob::LightCfgData_t>* resp = new Blob::Response_t<Blob::LightCfgData_t>(req->idTrans, req->_error, _lightdata.cfg);
 
 			if(_json_supported){
-				cJSON* jresp = encodeCfgResponse(*resp);
+				cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
 				if(jresp){
 					char* jmsg = cJSON_Print(jresp);
 					cJSON_Delete(jresp);
@@ -547,7 +547,7 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 			resp->data.flags = Blob::LightNoEvents;
 
 			if(_json_supported){
-				cJSON* jresp = encodeStatResponse(*resp);
+				cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
 				if(jresp){
 					char* jmsg = cJSON_Print(jresp);
 					cJSON_Delete(jresp);
@@ -574,7 +574,7 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 			sprintf(pub_topic, "stat/boot/%s", _pub_topic_base);
 
 			if(_json_supported){
-				cJSON* jboot = _encodeBoot();
+				cJSON* jboot = JsonParser::getJsonFromObj(_lightdata);
 				if(jboot){
 					char* jmsg = cJSON_Print(jboot);
 					cJSON_Delete(jboot);
@@ -784,6 +784,19 @@ void LightManager::eventSimulatorCb() {
 		char* pub_topic = (char*)Heap::memAlloc(MQ::MQClient::getMaxTopicLen());
 		MBED_ASSERT(pub_topic);
 		sprintf(pub_topic, "stat/value/%s", _pub_topic_base);
+
+		if(_json_supported){
+			cJSON* jboot = JsonParser::getJsonFromObj(_lightdata.stat);
+			if(jboot){
+				char* jmsg = cJSON_Print(jboot);
+				cJSON_Delete(jboot);
+				MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
+				Heap::memFree(jmsg);
+				Heap::memFree(pub_topic);
+				return;
+			}
+		}
+
 		MQ::MQClient::publish(pub_topic, &_lightdata.stat, sizeof(Blob::LightStatData_t), &_publicationCb);
 		Heap::memFree(pub_topic);
 	}
@@ -827,6 +840,19 @@ void LightManager::_updateAndNotify(uint8_t value){
 	char* pub_topic = (char*)Heap::memAlloc(MQ::MQClient::getMaxTopicLen());
 	MBED_ASSERT(pub_topic);
 	sprintf(pub_topic, "stat/value/%s", _pub_topic_base);
+
+	if(_json_supported){
+		cJSON* jboot = JsonParser::getJsonFromObj(_lightdata.stat);
+		if(jboot){
+			char* jmsg = cJSON_Print(jboot);
+			cJSON_Delete(jboot);
+			MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
+			Heap::memFree(jmsg);
+			Heap::memFree(pub_topic);
+			return;
+		}
+	}
+
 	MQ::MQClient::publish(pub_topic, &_lightdata.stat, sizeof(Blob::LightStatData_t), &_publicationCb);
 	Heap::memFree(pub_topic);
 }
@@ -891,52 +917,10 @@ _updateConfigExit:
 //------------------------------------------------------------------------------------
 
 
-/** JSON keys */
-static const char* p_actions		= "actions";
-static const char* p_alsData		= "alsData";
-static const char* p_astCorr 		= "astCorr";
-static const char* p_astData 		= "astData";
-static const char* p_cfg 			= "cfg";
-static const char* p_code	 		= "code";
-static const char* p_curve	 		= "curve";
-static const char* p_data	 		= "data";
-static const char* p_date 	 		= "date";
-static const char* p_descr	 		= "descr";
-static const char* p_error	 		= "error";
-static const char* p_evtFlags 		= "evtFlags";
-static const char* p_flags	 		= "flags";
-static const char* p_header			= "header";
-static const char* p_id  			= "id";
-static const char* p_idTrans 		= "idTrans";
-static const char* p_latitude 		= "latitude";
-static const char* p_light			= "light";
-static const char* p_longitude 		= "longitude";
-static const char* p_lux			= "lux";
-static const char* p_luxLevel		= "luxLevel";
-static const char* p_max			= "max";
-static const char* p_min			= "min";
-static const char* p_mode			= "mode";
-static const char* p_now			= "now";
-static const char* p_numActions		= "numActions";
-static const char* p_outData		= "outData";
-static const char* p_outValue		= "outValue";
-static const char* p_period			= "period";
-static const char* p_reductionStart = "reductionStart";
-static const char* p_reductionStop	= "reductionStop";
-static const char* p_samples		= "samples";
-static const char* p_stat	 		= "stat";
-static const char* p_thres			= "thres";
-static const char* p_time	 		= "time";
-static const char* p_timestamp		= "timestamp";
-static const char* p_updFlags 		= "updFlags";
-static const char* p_wdowDawnStart 	= "wdowDawnStart";
-static const char* p_wdowDawnStop 	= "wdowDawnStop";
-static const char* p_wdowDuskStart 	= "wdowDuskStart";
-static const char* p_wdowDuskStop 	= "wdowDuskStop";
-
+namespace JSON {
 
 //------------------------------------------------------------------------------------
-cJSON* LightManager::encodeCfg(const Blob::LightCfgData_t& cfg){
+cJSON* getJsonFromLightCfg(const Blob::LightCfgData_t& cfg){
 	cJSON *alsData = NULL;
 	cJSON *outData = NULL;
 	cJSON *curve = NULL;
@@ -950,10 +934,10 @@ cJSON* LightManager::encodeCfg(const Blob::LightCfgData_t& cfg){
 	}
 
 	// key: light.updFlags
-	cJSON_AddNumberToObject(light, p_updFlags, cfg.updFlagMask);
+	cJSON_AddNumberToObject(light, JsonParser::p_updFlags, cfg.updFlagMask);
 
 	// key: light.evtFlags
-	cJSON_AddNumberToObject(light, p_evtFlags, cfg.evtFlagMask);
+	cJSON_AddNumberToObject(light, JsonParser::p_evtFlags, cfg.evtFlagMask);
 
 	// key: alsData
 	if((alsData=cJSON_CreateObject()) == NULL){
@@ -967,19 +951,19 @@ cJSON* LightManager::encodeCfg(const Blob::LightCfgData_t& cfg){
 		cJSON_Delete(light);
 		return NULL;
 	}
-	cJSON_AddNumberToObject(value, p_min, cfg.alsData.lux.min);
-	cJSON_AddNumberToObject(value, p_max, cfg.alsData.lux.max);
-	cJSON_AddNumberToObject(value, p_thres, cfg.alsData.lux.thres);
-	cJSON_AddItemToObject(alsData, p_lux, value);
-	cJSON_AddItemToObject(light, p_alsData, alsData);
+	cJSON_AddNumberToObject(value, JsonParser::p_min, cfg.alsData.lux.min);
+	cJSON_AddNumberToObject(value, JsonParser::p_max, cfg.alsData.lux.max);
+	cJSON_AddNumberToObject(value, JsonParser::p_thres, cfg.alsData.lux.thres);
+	cJSON_AddItemToObject(alsData, JsonParser::p_lux, value);
+	cJSON_AddItemToObject(light, JsonParser::p_alsData, alsData);
 
 	// key: outData
 	if((outData=cJSON_CreateObject()) == NULL){
 		cJSON_Delete(light);
 		return NULL;
 	}
-	cJSON_AddNumberToObject(outData, p_mode, cfg.outData.mode);
-	cJSON_AddNumberToObject(outData, p_numActions, cfg.outData.numActions);
+	cJSON_AddNumberToObject(outData, JsonParser::p_mode, cfg.outData.mode);
+	cJSON_AddNumberToObject(outData, JsonParser::p_numActions, cfg.outData.numActions);
 
 	// key: outData.curve
 	if((curve=cJSON_CreateObject()) == NULL){
@@ -987,7 +971,7 @@ cJSON* LightManager::encodeCfg(const Blob::LightCfgData_t& cfg){
 		cJSON_Delete(light);
 		return NULL;
 	}
-	cJSON_AddNumberToObject(curve, p_samples, cfg.outData.curve.samples);
+	cJSON_AddNumberToObject(curve, JsonParser::p_samples, cfg.outData.curve.samples);
 
 	// key: outData.curve.data
 	if((array=cJSON_CreateArray()) == NULL){
@@ -1006,8 +990,8 @@ cJSON* LightManager::encodeCfg(const Blob::LightCfgData_t& cfg){
 		}
 		cJSON_AddItemToArray(array, value);
 	}
-	cJSON_AddItemToObject(curve, p_data, array);
-	cJSON_AddItemToObject(outData, p_curve, curve);
+	cJSON_AddItemToObject(curve, JsonParser::p_data, array);
+	cJSON_AddItemToObject(outData, JsonParser::p_curve, curve);
 
 	// key: outData.actions
 	if((array=cJSON_CreateArray()) == NULL){
@@ -1022,12 +1006,12 @@ cJSON* LightManager::encodeCfg(const Blob::LightCfgData_t& cfg){
 			cJSON_Delete(light);
 			return NULL;
 		}
-		cJSON_AddNumberToObject(value, p_id, cfg.outData.actions[i].id);
-		cJSON_AddNumberToObject(value, p_flags, cfg.outData.actions[i].flags);
-		cJSON_AddNumberToObject(value, p_date, cfg.outData.actions[i].date);
-		cJSON_AddNumberToObject(value, p_time, cfg.outData.actions[i].time);
-		cJSON_AddNumberToObject(value, p_astCorr, cfg.outData.actions[i].astCorr);
-		cJSON_AddNumberToObject(value, p_outValue, cfg.outData.actions[i].outValue);
+		cJSON_AddNumberToObject(value, JsonParser::p_id, cfg.outData.actions[i].id);
+		cJSON_AddNumberToObject(value, JsonParser::p_flags, cfg.outData.actions[i].flags);
+		cJSON_AddNumberToObject(value, JsonParser::p_date, cfg.outData.actions[i].date);
+		cJSON_AddNumberToObject(value, JsonParser::p_time, cfg.outData.actions[i].time);
+		cJSON_AddNumberToObject(value, JsonParser::p_astCorr, cfg.outData.actions[i].astCorr);
+		cJSON_AddNumberToObject(value, JsonParser::p_outValue, cfg.outData.actions[i].outValue);
 		if((luxLevel=cJSON_CreateObject()) == NULL){
 			cJSON_Delete(value);
 			cJSON_Delete(array);
@@ -1035,35 +1019,74 @@ cJSON* LightManager::encodeCfg(const Blob::LightCfgData_t& cfg){
 			cJSON_Delete(light);
 			return NULL;
 		}
-		cJSON_AddNumberToObject(luxLevel, p_min, cfg.outData.actions[i].luxLevel.min);
-		cJSON_AddNumberToObject(luxLevel, p_max, cfg.outData.actions[i].luxLevel.max);
-		cJSON_AddNumberToObject(luxLevel, p_thres, cfg.outData.actions[i].luxLevel.thres);
-		cJSON_AddItemToObject(value, p_luxLevel, luxLevel);
+		cJSON_AddNumberToObject(luxLevel, JsonParser::p_min, cfg.outData.actions[i].luxLevel.min);
+		cJSON_AddNumberToObject(luxLevel, JsonParser::p_max, cfg.outData.actions[i].luxLevel.max);
+		cJSON_AddNumberToObject(luxLevel, JsonParser::p_thres, cfg.outData.actions[i].luxLevel.thres);
+		cJSON_AddItemToObject(value, JsonParser::p_luxLevel, luxLevel);
 		cJSON_AddItemToArray(array, value);
 	}
-	cJSON_AddItemToObject(outData, p_actions, array);
-	cJSON_AddItemToObject(light, p_outData, outData);
+	cJSON_AddItemToObject(outData, JsonParser::p_actions, array);
+	cJSON_AddItemToObject(light, JsonParser::p_outData, outData);
 	return light;
 }
 
 
 //------------------------------------------------------------------------------------
-cJSON* LightManager::encodeStat(const Blob::LightStatData_t& stat){
-	cJSON* light = NULL;
-	cJSON* value = NULL;
+cJSON* getJsonFromLightStat(const Blob::LightStatData_t& stat){
+	cJSON* json = NULL;
 
-	if((light=cJSON_CreateObject()) == NULL){
+	if((json=cJSON_CreateObject()) == NULL){
 		return NULL;
 	}
 
-	cJSON_AddNumberToObject(light, p_flags, stat.flags);
-	cJSON_AddNumberToObject(light, p_outValue, stat.outValue);
-	return light;
+	cJSON_AddNumberToObject(json, JsonParser::p_flags, stat.flags);
+	cJSON_AddNumberToObject(json, JsonParser::p_outValue, stat.outValue);
+	return json;
 }
 
 
 //------------------------------------------------------------------------------------
-bool LightManager::decodeSetRequest(Blob::SetRequest_t<Blob::LightCfgData_t>&req, char* json_data){
+cJSON* getJsonFromLightBoot(const Blob::LightBootData_t& boot){
+	cJSON* json = NULL;
+	cJSON* item = NULL;
+	if((json=cJSON_CreateObject()) == NULL){
+		return NULL;
+	}
+
+	if((item = getJsonFromLightCfg(boot.cfg)) == NULL){
+		cJSON_Delete(json);
+		return NULL;
+	}
+	cJSON_AddItemToObject(json, JsonParser::p_astCfg, item);
+
+	if((item = getJsonFromLightStat(boot.stat)) == NULL){
+		cJSON_Delete(json);
+		return NULL;
+	}
+	cJSON_AddItemToObject(json, JsonParser::p_astData, item);
+	return json;
+}
+
+
+//------------------------------------------------------------------------------------
+cJSON* getJsonFromLightLux(const Blob::LightLuxLevel& lux){
+	cJSON* json = NULL;
+	if((json=cJSON_CreateObject()) == NULL){
+		return NULL;
+	}
+	cJSON_AddNumberToObject(json, JsonParser::p_luxLevel, lux);
+	return json;
+}
+
+
+//------------------------------------------------------------------------------------
+cJSON* getJsonFromLightTime(const Blob::LightTimeData_t& t){
+	return JSON::getJsonFromAstCalStat(t);
+}
+
+
+//------------------------------------------------------------------------------------
+uint32_t getLightCfgFromJson(Blob::LightCfgData_t &cfg, cJSON* json){
 	cJSON *alsData = NULL;
 	cJSON *outData = NULL;
 	cJSON *array = NULL;
@@ -1071,441 +1094,148 @@ bool LightManager::decodeSetRequest(Blob::SetRequest_t<Blob::LightCfgData_t>&req
 	cJSON *luxLevel = NULL;
 	cJSON *item = NULL;
 	cJSON *obj = NULL;
-	cJSON *light = NULL;
-	cJSON *root = NULL;
-	req.keys = Blob::LightKeyNone;
-	req._error.code = Blob::ErrOK;
-	strcpy(req._error.descr, Blob::errList[req._error.code]);
+	uint32_t keys = Blob::LightKeyNone;
 
-	if((root = cJSON_Parse(json_data)) == NULL){
-		req._error.code = Blob::ErrJsonMalformed;
-		req.idTrans = Blob::UnusedIdTrans;
-		goto __decode_null_exitLightCfg;
+	if((obj = cJSON_GetObjectItem(json, JsonParser::p_updFlags)) != NULL){
+		cfg.updFlagMask = (Blob::LightUpdFlags)obj->valueint;
+		keys |= Blob::LightKeyCfgUpd;
 	}
-
-	// key: idTrans
-	if((obj = cJSON_GetObjectItem(root, p_idTrans)) == NULL){
-		req._error.code = Blob::ErrIdTransInvalid;
-		req.idTrans = Blob::UnusedIdTrans;
-		goto __decode_null_exitLightCfg;
-	}
-	req.idTrans = obj->valueint;
-
-	//key: light
-	if((light = cJSON_GetObjectItem(root, p_light)) == NULL){
-		req._error.code = Blob::ErrLightMissing;
-		goto __decode_null_exitLightCfg;
+	if((obj = cJSON_GetObjectItem(json, JsonParser::p_evtFlags)) != NULL){
+		cfg.evtFlagMask = (Blob::LightEvtFlags)obj->valueint;
+		keys |= Blob::LightKeyCfgEvt;
 	}
 
-	if((obj = cJSON_GetObjectItem(light, p_updFlags)) != NULL){
-		req.data.updFlagMask = (Blob::LightUpdFlags)obj->valueint;
-		req.keys |= Blob::LightKeyCfgUpd;
-	}
-	if((obj = cJSON_GetObjectItem(light, p_evtFlags)) != NULL){
-		req.data.evtFlagMask = (Blob::LightEvtFlags)obj->valueint;
-		req.keys |= Blob::LightKeyCfgEvt;
-	}
 	//key: alsData
-	if((alsData = cJSON_GetObjectItem(light, p_alsData)) != NULL){
+	if((alsData = cJSON_GetObjectItem(json, JsonParser::p_alsData)) != NULL){
 		cJSON *lux = NULL;
-		if((lux = cJSON_GetObjectItem(alsData, p_lux)) != NULL){
-			if((obj = cJSON_GetObjectItem(lux, p_min)) != NULL){
-				req.data.alsData.lux.min = obj->valueint;
+		if((lux = cJSON_GetObjectItem(alsData, JsonParser::p_lux)) != NULL){
+			if((obj = cJSON_GetObjectItem(lux, JsonParser::p_min)) != NULL){
+				cfg.alsData.lux.min = obj->valueint;
 			}
-			if((obj = cJSON_GetObjectItem(lux, p_max)) != NULL){
-				req.data.alsData.lux.max = obj->valueint;
+			if((obj = cJSON_GetObjectItem(lux, JsonParser::p_max)) != NULL){
+				cfg.alsData.lux.max = obj->valueint;
 			}
-			if((obj = cJSON_GetObjectItem(lux, p_thres)) != NULL){
-				req.data.alsData.lux.thres = obj->valueint;
+			if((obj = cJSON_GetObjectItem(lux, JsonParser::p_thres)) != NULL){
+				cfg.alsData.lux.thres = obj->valueint;
 			}
-			req.keys |= Blob::LightKeyCfgAls;
+			keys |= Blob::LightKeyCfgAls;
 		}
 	}
 
-	if((outData = cJSON_GetObjectItem(light, p_outData)) != NULL){
-		if((obj = cJSON_GetObjectItem(outData, p_mode)) != NULL){
-			req.data.outData.mode = (Blob::LightOutModeFlags)obj->valueint;
-			req.keys |= Blob::LightKeyCfgOutm;
+	if((outData = cJSON_GetObjectItem(json, JsonParser::p_outData)) != NULL){
+		if((obj = cJSON_GetObjectItem(outData, JsonParser::p_mode)) != NULL){
+			cfg.outData.mode = (Blob::LightOutModeFlags)obj->valueint;
+			keys |= Blob::LightKeyCfgOutm;
 		}
-		if((obj = cJSON_GetObjectItem(outData, p_numActions)) != NULL){
-			req.data.outData.numActions = obj->valueint;
+		if((obj = cJSON_GetObjectItem(outData, JsonParser::p_numActions)) != NULL){
+			cfg.outData.numActions = obj->valueint;
 		}
 
-		if((value = cJSON_GetObjectItem(outData, p_curve)) != NULL){
-			if((obj = cJSON_GetObjectItem(value, p_samples)) != NULL){
-				req.data.outData.curve.samples = obj->valueint;
+		if((value = cJSON_GetObjectItem(outData, JsonParser::p_curve)) != NULL){
+			if((obj = cJSON_GetObjectItem(value, JsonParser::p_samples)) != NULL){
+				cfg.outData.curve.samples = obj->valueint;
 			}
-			if((obj = cJSON_GetObjectItem(value, p_data)) != NULL){
+			if((obj = cJSON_GetObjectItem(value, JsonParser::p_data)) != NULL){
 				for(int i=0;i<cJSON_GetArraySize(obj);i++){
 					item = cJSON_GetArrayItem(obj, i);
-					req.data.outData.curve.data[i] = item->valueint;
+					cfg.outData.curve.data[i] = item->valueint;
 				}
 			}
-			req.keys |= Blob::LightKeyCfgCurve;
+			keys |= Blob::LightKeyCfgCurve;
 		}
 
-		if((array = cJSON_GetObjectItem(outData, p_actions)) != NULL){
+		if((array = cJSON_GetObjectItem(outData, JsonParser::p_actions)) != NULL){
 			for(int i=0;i<cJSON_GetArraySize(array);i++){
 				value = cJSON_GetArrayItem(array, i);
-				if((obj = cJSON_GetObjectItem(value, p_id)) != NULL){
-					req.data.outData.actions[i].id = obj->valueint;
+				if((obj = cJSON_GetObjectItem(value, JsonParser::p_id)) != NULL){
+					cfg.outData.actions[i].id = obj->valueint;
 				}
-				if((obj = cJSON_GetObjectItem(value, p_flags)) != NULL){
-					req.data.outData.actions[i].flags = (Blob::LightActionFlags)obj->valueint;
+				if((obj = cJSON_GetObjectItem(value, JsonParser::p_flags)) != NULL){
+					cfg.outData.actions[i].flags = (Blob::LightActionFlags)obj->valueint;
 				}
-				if((obj = cJSON_GetObjectItem(value, p_date)) != NULL){
-					req.data.outData.actions[i].date = obj->valueint;
+				if((obj = cJSON_GetObjectItem(value, JsonParser::p_date)) != NULL){
+					cfg.outData.actions[i].date = obj->valueint;
 				}
-				if((obj = cJSON_GetObjectItem(value, p_time)) != NULL){
-					req.data.outData.actions[i].time = obj->valueint;
+				if((obj = cJSON_GetObjectItem(value, JsonParser::p_time)) != NULL){
+					cfg.outData.actions[i].time = obj->valueint;
 				}
-				if((obj = cJSON_GetObjectItem(value, p_astCorr)) != NULL){
-					req.data.outData.actions[i].astCorr = obj->valueint;
+				if((obj = cJSON_GetObjectItem(value, JsonParser::p_astCorr)) != NULL){
+					cfg.outData.actions[i].astCorr = obj->valueint;
 				}
-				if((obj = cJSON_GetObjectItem(value, p_outValue)) != NULL){
-					req.data.outData.actions[i].outValue = obj->valueint;
+				if((obj = cJSON_GetObjectItem(value, JsonParser::p_outValue)) != NULL){
+					cfg.outData.actions[i].outValue = obj->valueint;
 				}
 
-				if((luxLevel = cJSON_GetObjectItem(value, p_luxLevel)) != NULL){
-					if((obj = cJSON_GetObjectItem(luxLevel, p_min)) != NULL){
-						req.data.outData.actions[i].luxLevel.min = obj->valueint;
+				if((luxLevel = cJSON_GetObjectItem(value, JsonParser::p_luxLevel)) != NULL){
+					if((obj = cJSON_GetObjectItem(luxLevel, JsonParser::p_min)) != NULL){
+						cfg.outData.actions[i].luxLevel.min = obj->valueint;
 					}
-					if((obj = cJSON_GetObjectItem(luxLevel, p_max)) != NULL){
-						req.data.outData.actions[i].luxLevel.max = obj->valueint;
+					if((obj = cJSON_GetObjectItem(luxLevel, JsonParser::p_max)) != NULL){
+						cfg.outData.actions[i].luxLevel.max = obj->valueint;
 					}
-					if((obj = cJSON_GetObjectItem(luxLevel, p_thres)) != NULL){
-						req.data.outData.actions[i].luxLevel.thres = obj->valueint;
+					if((obj = cJSON_GetObjectItem(luxLevel, JsonParser::p_thres)) != NULL){
+						cfg.outData.actions[i].luxLevel.thres = obj->valueint;
 					}
 				}
 			}
-			req.keys |= Blob::LightKeyCfgActs;
+			keys |= Blob::LightKeyCfgActs;
 		}
 	}
-
-__decode_null_exitLightCfg:
-	strcpy(req._error.descr, Blob::errList[req._error.code]);
-	if(root){
-		cJSON_Delete(root);
-	}
-	if(req._error.code == Blob::ErrOK){
-		return true;
-	}
-	return false;
+	return keys;
 }
 
 
 //------------------------------------------------------------------------------------
-cJSON* LightManager::encodeCfgResponse(const Blob::Response_t<Blob::LightCfgData_t> &resp){
-	// keys: root, idtrans, header, error, astcal
-	cJSON *header = NULL;
-	cJSON *error = NULL;
-	cJSON *light = NULL;
-	cJSON *value = NULL;
-	cJSON *root = cJSON_CreateObject();
-
-	if(!root){
-		return NULL;
-	}
-
-	// key: idTrans sólo se envía si está en uso
-	if(resp.idTrans != Blob::UnusedIdTrans){
-		cJSON_AddNumberToObject(root, p_idTrans, resp.idTrans);
-	}
-
-	// key: header
-	if((header=cJSON_CreateObject()) == NULL){
-		goto _parseLightCfg_Exit;
-	}
-	cJSON_AddNumberToObject(header, p_timestamp, resp.header.timestamp);
-	cJSON_AddItemToObject(root, p_header, header);
-
-	// key: error sólo se envía si el error es distinto de Blob::ErrOK
-	if(resp.error.code != Blob::ErrOK){
-		if((error=cJSON_CreateObject()) == NULL){
-			goto _parseLightCfg_Exit;
-		}
-		cJSON_AddNumberToObject(error, p_code, resp.error.code);
-		if((value=cJSON_CreateString(resp.error.descr)) == NULL){
-			goto _parseLightCfg_Exit;
-		}
-		cJSON_AddItemToObject(error, p_descr, value);
-		// añade objeto
-		cJSON_AddItemToObject(root, p_error, error);
-	}
-
-	// key: astcal sólo se envía si el error es Blob::ErrOK
-	if(resp.error.code == Blob::ErrOK){
-		if((light = encodeCfg(resp.data)) == NULL){
-			goto _parseLightCfg_Exit;
-		}
-		// añade objeto
-		cJSON_AddItemToObject(root, p_light, light);
-	}
-	return root;
-
-_parseLightCfg_Exit:
-	cJSON_Delete(root);
-	return NULL;
-}
-
-
-//------------------------------------------------------------------------------------
-cJSON* LightManager::encodeStatResponse(const Blob::Response_t<Blob::LightStatData_t> &resp){
-	// keys: root, idtrans, header, error, energy
-	cJSON *header = NULL;
-	cJSON *error = NULL;
-	cJSON *light = NULL;
-	cJSON *value = NULL;
-	cJSON *root = cJSON_CreateObject();
-
-	if(!root){
-		return NULL;
-	}
-
-	// key: idTrans sólo se envía si está en uso
-	if(resp.idTrans != Blob::UnusedIdTrans){
-		cJSON_AddNumberToObject(root, p_idTrans, resp.idTrans);
-	}
-
-	// key: header
-	if((header=cJSON_CreateObject()) == NULL){
-		goto _parseLightStat_Exit;
-	}
-	cJSON_AddNumberToObject(header, p_timestamp, resp.header.timestamp);
-	cJSON_AddItemToObject(root, p_header, header);
-
-	// key: error sólo se envía si el error es distinto de Blob::ErrOK
-	if(resp.error.code != Blob::ErrOK){
-		if((error=cJSON_CreateObject()) == NULL){
-			goto _parseLightStat_Exit;
-		}
-		cJSON_AddNumberToObject(error, p_code, resp.error.code);
-		if((value=cJSON_CreateString(resp.error.descr)) == NULL){
-			goto _parseLightStat_Exit;
-		}
-		cJSON_AddItemToObject(error, p_descr, value);
-		// añade objeto
-		cJSON_AddItemToObject(root, p_error, error);
-	}
-
-	// key: astcal sólo se envía si el error es Blob::ErrOK
-	if(resp.error.code == Blob::ErrOK){
-		if((light = encodeStat(resp.data)) == NULL){
-			goto _parseLightStat_Exit;
-		}
-		// añade objeto
-		cJSON_AddItemToObject(root, p_light, light);
-	}
-	return root;
-
-	_parseLightStat_Exit:
-	cJSON_Delete(root);
-	return NULL;
-}
-
-
-//------------------------------------------------------------------------------------
-cJSON* LightManager::encodeBoot(const Blob::LightBootData_t& boot){
-	cJSON* light = NULL;
-	cJSON* item = NULL;
-	if((light=cJSON_CreateObject()) == NULL){
-		return NULL;
-	}
-
-	if((item = encodeCfg(boot.cfg)) == NULL){
-		goto __encodeBoot_Err;
-	}
-	cJSON_AddItemToObject(light, p_cfg, item);
-
-	if((item = encodeStat(boot.stat)) == NULL){
-		goto __encodeBoot_Err;
-	}
-	cJSON_AddItemToObject(light, p_stat, item);
-	return light;
-
-__encodeBoot_Err:
-	cJSON_Delete(light);
-	return NULL;
-}
-
-
-//------------------------------------------------------------------------------------
-static bool LightManager::_decodeSetReqValue(Blob::SetRequest_t<Blob::LightStatData_t>&req, char* json_data){
-	cJSON *alsData = NULL;
-	cJSON *outData = NULL;
-	cJSON *array = NULL;
-	cJSON *value = NULL;
-	cJSON *luxLevel = NULL;
-	cJSON *item = NULL;
+uint32_t getLightStatFromJson(Blob::LightStatData_t &stat, cJSON* json){
 	cJSON *obj = NULL;
-	cJSON *light = NULL;
-	cJSON *root = NULL;
-	req.keys = Blob::LightKeyNone;
-	req._error.code = Blob::ErrOK;
-	strcpy(req._error.descr, Blob::errList[req._error.code]);
-
-	if((root = cJSON_Parse(json_data)) == NULL){
-		req._error.code = Blob::ErrJsonMalformed;
-		req.idTrans = Blob::UnusedIdTrans;
-		goto _decodeSetReqValue_Exit;
+	if((obj = cJSON_GetObjectItem(json, JsonParser::p_flags)) == NULL){
+		return 0;
 	}
-
-	// key: idTrans
-	if((obj = cJSON_GetObjectItem(root, p_idTrans)) == NULL){
-		req._error.code = Blob::ErrIdTransInvalid;
-		req.idTrans = Blob::UnusedIdTrans;
-		goto _decodeSetReqValue_Exit;
-	}
-	req.idTrans = obj->valueint;
-
-	//key: light
-	if((light = cJSON_GetObjectItem(root, p_light)) == NULL){
-		req._error.code = Blob::ErrLightMissing;
-		goto _decodeSetReqValue_Exit;
-	}
-
-	if((obj = cJSON_GetObjectItem(light, p_flags)) != NULL){
-		req.data.flags = obj->valueint;
-	}
-	if((obj = cJSON_GetObjectItem(light, p_outValue)) != NULL){
-		req.data.outValue = obj->valueint;
-	}
-
-_decodeSetReqValue_Exit:
-	strcpy(req._error.descr, Blob::errList[req._error.code]);
-	if(root){
-		cJSON_Delete(root);
-	}
-	if(req._error.code == Blob::ErrOK){
-		return true;
-	}
-	return false;
-}
-
-
-//------------------------------------------------------------------------------------
-static bool LightManager::_decodeSetValue(Blob::LightStatData_t &req, char* json_data){
-	cJSON *root = NULL;
-	cJSON *astData = NULL;
-	cJSON *obj = NULL;
-	if((root = cJSON_Parse(json_data)) == NULL){
-		return false;
-	}
-
-	// key: flags
-	if((obj = cJSON_GetObjectItem(root, p_flags)) == NULL){
-		cJSON_Delete(root);
-		return false;
-	}
-	req.flags = obj->valueint;
+	stat.flags = obj->valueint;
 
 	// key: outValue
-	if((obj = cJSON_GetObjectItem(root, p_outValue)) == NULL){
-		cJSON_Delete(root);
-		return false;
+	if((obj = cJSON_GetObjectItem(json, JsonParser::p_outValue)) == NULL){
+		return 0;
 	}
-	req.outValue = obj->valueint;
+	stat.outValue = obj->valueint;
 
-	cJSON_Delete(root);
-	return true;
+	return 1;
+}
+//------------------------------------------------------------------------------------
+uint32_t getLightBootFromJson(Blob::LightBootData_t &obj, cJSON* json){
+	cJSON* cfg = NULL;
+	cJSON* stat = NULL;
+	uint32_t keys = 0;
+
+	if(json == NULL){
+		return 0;
+	}
+	if((cfg = cJSON_GetObjectItem(json, JsonParser::p_cfg)) != NULL){
+		keys |= getLightCfgFromJson(obj.cfg, cfg);
+	}
+	if((stat = cJSON_GetObjectItem(json, JsonParser::p_stat)) != NULL){
+		keys |= getLightStatFromJson(obj.stat, stat);
+	}
+	return keys;
+}
+
+//------------------------------------------------------------------------------------
+uint32_t getLightLuxFromJson(Blob::LightLuxLevel &lux, cJSON* json){
+	cJSON *root = NULL;
+	cJSON *obj = NULL;
+	// key: luxLevel
+	if((obj = cJSON_GetObjectItem(root, JsonParser::p_luxLevel)) == NULL){
+		return 0;
+	}
+	lux = obj->valueint;
+	return 1;
 }
 
 
 //------------------------------------------------------------------------------------
-static bool LightManager::_decodeSetLux(Blob::LightLuxLevel &req, char* json_data){
-	cJSON *root = NULL;
-	cJSON *obj = NULL;
-	if((root = cJSON_Parse(json_data)) == NULL){
-		return false;
-	}
-
-	// key: outValue
-	if((obj = cJSON_GetObjectItem(root, p_outValue)) == NULL){
-		cJSON_Delete(root);
-		return false;
-	}
-	req = obj->valueint;
-	cJSON_Delete(root);
-	return true;
+uint32_t getLightTimeFromJson(Blob::AstCalStatData_t &obj, cJSON* json){
+	return JSON::getAstCalStatFromJson(obj, json);
 }
 
+}	// end namespace JSON
 
-//------------------------------------------------------------------------------------
-static bool LightManager::_decodeSetTime(Blob::AstCalStatData_t &req, char* json_data){
-	cJSON *root = NULL;
-	cJSON *astData = NULL;
-	cJSON *obj = NULL;
-	if((root = cJSON_Parse(json_data)) == NULL){
-		return false;
-	}
-
-	// key: flags
-	if((obj = cJSON_GetObjectItem(root, p_flags)) == NULL){
-		cJSON_Delete(root);
-		return false;
-	}
-	req.flags = obj->valueint;
-
-	// key: period
-	if((obj = cJSON_GetObjectItem(root, p_period)) == NULL){
-		cJSON_Delete(root);
-		return false;
-	}
-	req.period = obj->valueint;
-
-	// key: now
-	if((obj = cJSON_GetObjectItem(root, p_now)) == NULL){
-		cJSON_Delete(root);
-		return false;
-	}
-	req.now = (time_t)obj->valuedouble;
-
-	// key: astData
-	if((astData = cJSON_GetObjectItem(root, p_now)) == NULL){
-		cJSON_Delete(root);
-		return false;
-	}
-
-	if((obj = cJSON_GetObjectItem(root, p_latitude)) == NULL){
-		cJSON_Delete(root);
-		return false;
-	}
-	req.astData.latitude = obj->valueint;
-	if((obj = cJSON_GetObjectItem(root, p_longitude)) == NULL){
-		cJSON_Delete(root);
-		return false;
-	}
-	req.astData.longitude = obj->valueint;
-	if((obj = cJSON_GetObjectItem(root, p_wdowDawnStart)) == NULL){
-		cJSON_Delete(root);
-		return false;
-	}
-	req.astData.wdowDawnStart = obj->valueint;
-	if((obj = cJSON_GetObjectItem(root, p_wdowDawnStop)) == NULL){
-		cJSON_Delete(root);
-		return false;
-	}
-	req.astData.wdowDawnStop = obj->valueint;
-	if((obj = cJSON_GetObjectItem(root, p_wdowDuskStart)) == NULL){
-		cJSON_Delete(root);
-		return false;
-	}
-	req.astData.wdowDuskStart = obj->valueint;
-	if((obj = cJSON_GetObjectItem(root, p_wdowDuskStop)) == NULL){
-		cJSON_Delete(root);
-		return false;
-	}
-	req.astData.wdowDuskStop = obj->valueint;
-	if((obj = cJSON_GetObjectItem(root, p_reductionStart)) == NULL){
-		cJSON_Delete(root);
-		return false;
-	}
-	req.astData.reductionStart = obj->valueint;
-	if((obj = cJSON_GetObjectItem(root, p_reductionStop)) == NULL){
-		cJSON_Delete(root);
-		return false;
-	}
-	req.astData.reductionStop = obj->valueint;
-	cJSON_Delete(root);
-	return true;
-}

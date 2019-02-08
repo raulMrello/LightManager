@@ -78,50 +78,6 @@ class LightManager : public ActiveModule {
     	return _json_supported;
     }
 
-
-	/**
-	 * Codifica la configuración actual en un objeto JSON light = {...}
-	 * @param cfg Configuración
-	 * @return Objeto JSON o NULL en caso de error
-	 */
-	static cJSON* encodeCfg(const Blob::LightCfgData_t& cfg);
-
-	/**
-	 * Codifica el estado actual en un objeto JSON light = {...}
-	 * @param stat Estado
-	 * @return Objeto JSON o NULL en caso de error
-	 */
-	static cJSON* encodeStat(const Blob::LightStatData_t& stat);
-
-	/**
-	 * Codifica el estado de arranque en un objeto JSON light = {...}
-	 * @param boot Estado de arranque
-	 * @return Objeto JSON o NULL en caso de error
-	 */
-	static cJSON* encodeBoot(const Blob::LightBootData_t& boot);
-
-	/**
-	 * Decodifica una operación SetRequest en la que se adjunta la nueva configuración a aplicar
-	 * @param req Recibe el objeto decodificado
-	 * @param json_data Objeto JSON recibido
-	 * @return True si la decodificación es correcta
-	 */
-	static bool decodeSetRequest(Blob::SetRequest_t<Blob::LightCfgData_t>&req, char* json_data);
-
-	/**
-	 * Codifica la configuración actual en un objeto JSON solicitado previamente con un idtrans
-	 * @param resp Respuesta con la configuración actual
-	 * @return Objeto JSON
-	 */
-	static cJSON* encodeCfgResponse(const Blob::Response_t<Blob::LightCfgData_t> &resp);
-
-	/**
-	 * Codifica el estado actual en un objeto JSON solicitado previamente con un idtrans
-	 * @param resp Respuesta con el estado actual
-	 * @return Objeto JSON
-	 */
-	static cJSON* encodeStatResponse(const Blob::Response_t<Blob::LightStatData_t> &resp);
-
   private:
 
     /** Máximo número de mensajes alojables en la cola asociada a la máquina de estados */
@@ -269,63 +225,6 @@ class LightManager : public ActiveModule {
 	 * @param err Recibe los errores generados durante la actualización
 	 */
 	void _updateConfig(const Blob::LightCfgData_t& cfg, uint32_t keys, Blob::ErrorData_t& err);
-
-
-	/**
-	 * Codifica la configuración actual en un objeto JSON astcal = {...}
-	 * @return Objeto JSON o NULL en caso de error
-	 */
-	cJSON* _encodeCfg(){
-		return encodeCfg(_lightdata.cfg);
-	}
-
-	/**
-	 * Codifica el estado actual en un objeto JSON astcal = {...}
-	 * @return Objeto JSON o NULL en caso de error
-	 */
-	cJSON* _encodeStat(){
-		return encodeStat(_lightdata.stat);
-	}
-
-	/**
-	 * Codifica la información de arranque en un objeto JSON astcal = {...}
-	 * @return Objeto JSON o NULL en caso de error
-	 */
-	cJSON* _encodeBoot(){
-		return encodeBoot(_lightdata);
-	}
-
-	/**
-	 * Decodifica una operación SetRequest en la que se adjunta la nueva configuración a aplicar
-	 * @param req Recibe el objeto decodificado
-	 * @param json_data Objeto JSON recibido
-	 * @return True si la decodificación es correcta
-	 */
-	static bool _decodeSetReqValue(Blob::SetRequest_t<Blob::LightStatData_t>&req, char* json_data);
-
-	/**
-	 * Decodifica una operación SetRequest en la que se adjunta la nueva configuración a aplicar
-	 * @param req Recibe el objeto decodificado
-	 * @param json_data Objeto JSON recibido
-	 * @return True si la decodificación es correcta
-	 */
-	static bool _decodeSetValue(Blob::LightStatData_t &req, char* json_data);
-
-	/**
-	 * Decodifica una operación SetRequest en la que se adjunta la nueva configuración a aplicar
-	 * @param req Recibe el objeto decodificado
-	 * @param json_data Objeto JSON recibido
-	 * @return True si la decodificación es correcta
-	 */
-	static bool _decodeSetLux(Blob::LightLuxLevel &req, char* json_data);
-
-	/**
-	 * Decodifica una operación SetRequest en la que se adjunta la nueva configuración a aplicar
-	 * @param req Recibe el objeto decodificado
-	 * @param json_data Objeto JSON recibido
-	 * @return True si la decodificación es correcta
-	 */
-	static bool _decodeSetTime(Blob::AstCalStatData_t &req, char* json_data);
 
 };
      

@@ -15,6 +15,9 @@
 
 #include "Blob.h"
 #include "mbed.h"
+
+/** Incluye referencia a este módulo para hacer uso de los eventos temporales <Blob::AstCalStatData_t> */
+#include "AstCalendarBlob.h"
   
 
 
@@ -192,9 +195,91 @@ struct __packed LightBootData_t{
 	LightStatData_t stat;
 };
 
+/** Estructura de eventos temporales. Clona el objeto proporcionado por AstCalendar */
+typedef Blob::AstCalStatData_t LightTimeData_t;
+
+}	// end namespace Blob
 
 
-}
+namespace JSON {
+
+/**
+ * Codifica la configuración actual en un objeto JSON
+ * @param cfg Configuración
+ * @return Objeto JSON o NULL en caso de error
+ */
+cJSON* getJsonFromLightCfg(const Blob::LightCfgData_t& cfg);
+
+/**
+ * Codifica el estado actual en un objeto JSON
+ * @param stat Estado
+ * @return Objeto JSON o NULL en caso de error
+ */
+cJSON* getJsonFromLightStat(const Blob::LightStatData_t& stat);
+
+/**
+ * Codifica el estado de arranque en un objeto JSON
+ * @param boot Estado de arranque
+ * @return Objeto JSON o NULL en caso de error
+ */
+cJSON* getJsonFromLightBoot(const Blob::LightBootData_t& boot);
+
+/**
+ * Codifica la configuración de la célula ALS en un objeto JSON
+ * @param lux Configuración ALS
+ * @return Objeto JSON o NULL en caso de error
+ */
+cJSON* getJsonFromLightLux(const Blob::LightLuxLevel& lux);
+
+/**
+ * Codifica un evento temporal en un objeto JSON
+ * @param t Evento temporal
+ * @return Objeto JSON o NULL en caso de error
+ */
+cJSON* getJsonFromLightTime(const Blob::LightTimeData_t& t);
+
+/**
+ * Decodifica el mensaje JSON en un objeto de configuración
+ * @param obj Recibe el objeto decodificado
+ * @param json Objeto JSON a decodificar
+ * @return keys Parámetros decodificados o 0 en caso de error
+ */
+uint32_t getLightCfgFromJson(Blob::LightCfgData_t &obj, cJSON* json);
+
+/**
+ * Decodifica el mensaje JSON en un objeto de estado
+ * @param obj Recibe el objeto decodificado
+ * @param json Objeto JSON a decodificar
+ * @return keys Parámetros decodificados o 0 en caso de error
+ */
+uint32_t getLightStatFromJson(Blob::LightStatData_t &obj, cJSON* json);
+
+/**
+ * Decodifica el mensaje JSON en un objeto de arranque
+ * @param obj Recibe el objeto decodificado
+ * @param json Objeto JSON a decodificar
+ * @return keys Parámetros decodificados o 0 en caso de error
+ */
+uint32_t getLightBootFromJson(Blob::LightBootData_t &obj, cJSON* json);
+
+/**
+ * Decodifica el mensaje JSON en un objeto de configuración ALS
+ * @param obj Recibe el objeto decodificado
+ * @param json Objeto JSON a decodificar
+ * @return keys Parámetros decodificados o 0 en caso de error
+ */
+uint32_t getLightLuxFromJson(Blob::LightLuxLevel &obj, cJSON* json);
+
+/**
+ * Decodifica el mensaje JSON en un evento temporal
+ * @param obj Recibe el objeto decodificado
+ * @param json Objeto JSON a decodificar
+ * @return keys Parámetros decodificados o 0 en caso de error
+ */
+uint32_t getLightTimeFromJson(Blob::LightTimeData_t &obj, cJSON* json);
+
+
+}	// end namespace JSON
 
 
 
