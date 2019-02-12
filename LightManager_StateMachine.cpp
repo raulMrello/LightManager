@@ -45,6 +45,9 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
         		DEBUG_TRACE_E(_EXPR_, _MODULE_, "ERR_SUBSC en la suscripción LOCAL a %s", sub_topic_local);
         	}
         	Heap::memFree(sub_topic_local);
+
+        	// marca como componente iniciado
+        	_ready = true;
             return State::HANDLED;
         }
 
