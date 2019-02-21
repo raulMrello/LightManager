@@ -160,10 +160,10 @@ void LightManager::subscriptionCb(const char* topic, void* msg, uint16_t msg_len
     if(MQ::MQClient::isTokenRoot(topic, "set/time")){
         DEBUG_TRACE_D(_EXPR_, _MODULE_, "Recibido topic %s", topic);
 
-        Blob::AstCalStatData_t *req = NULL;
+        Blob::LightTimeData_t *req = NULL;
         bool json_decoded = false;
 		if(_json_supported){
-			req = (Blob::AstCalStatData_t*)Heap::memAlloc(sizeof(Blob::AstCalStatData_t));
+			req = (Blob::LightTimeData_t*)Heap::memAlloc(sizeof(Blob::LightTimeData_t));
 			MBED_ASSERT(req);
 			if(!(json_decoded = JsonParser::getObjFromJson(*req, (char*)msg))){
 				Heap::memFree(req);
@@ -172,7 +172,7 @@ void LightManager::subscriptionCb(const char* topic, void* msg, uint16_t msg_len
 		}
 
         // en primer lugar asegura que los datos tienen el tamaño correcto
-        if(!json_decoded && msg_len != sizeof(Blob::AstCalStatData_t)){
+        if(!json_decoded && msg_len != sizeof(Blob::LightTimeData_t)){
         	DEBUG_TRACE_W(_EXPR_, _MODULE_, "ERR_MSG. Error en el nº de datos del mensaje, topic [%s]", topic);
 			return;
         }
@@ -183,9 +183,9 @@ void LightManager::subscriptionCb(const char* topic, void* msg, uint16_t msg_len
 
         if(!json_decoded){
 			// el mensaje es un blob tipo Blob::LightStatData_t
-			req = (Blob::AstCalStatData_t*)Heap::memAlloc(sizeof(Blob::AstCalStatData_t));
+			req = (Blob::LightTimeData_t*)Heap::memAlloc(sizeof(Blob::LightTimeData_t));
 			MBED_ASSERT(req);
-			*req = *((Blob::AstCalStatData_t*)msg);
+			*req = *((Blob::LightTimeData_t*)msg);
         }
 		op->sig = RecvTimeSet;
 		// apunta a los datos

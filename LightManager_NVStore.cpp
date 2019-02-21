@@ -190,20 +190,22 @@ void LightManager::_updateAndNotify(uint8_t value){
 	char* pub_topic = (char*)Heap::memAlloc(MQ::MQClient::getMaxTopicLen());
 	MBED_ASSERT(pub_topic);
 	sprintf(pub_topic, "stat/value/%s", _pub_topic_base);
-
+	Blob::NotificationData_t<Blob::LightStatData_t> *notif = new Blob::NotificationData_t<Blob::LightStatData_t>(_lightdata.stat);
+	MBED_ASSERT(notif);
 	if(_json_supported){
-		cJSON* jboot = JsonParser::getJsonFromObj(_lightdata.stat);
+		cJSON* jboot = JsonParser::getJsonFromNotification(*notif);
 		if(jboot){
 			char* jmsg = cJSON_Print(jboot);
 			cJSON_Delete(jboot);
 			MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
 			Heap::memFree(jmsg);
+			delete(notif);
 			Heap::memFree(pub_topic);
 			return;
 		}
 	}
 
-	MQ::MQClient::publish(pub_topic, &_lightdata.stat, sizeof(Blob::LightStatData_t), &_publicationCb);
+	MQ::MQClient::publish(pub_topic, notif, sizeof(Blob::NotificationData_t<Blob::LightStatData_t>), &_publicationCb);
 	Heap::memFree(pub_topic);
 }
 

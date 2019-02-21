@@ -59,7 +59,7 @@ class Scheduler {
      * @param ast Estado del calendario
      * @return 0..100:Nuevo estado de la carga, -1:No hay acciones a ejecutar
      */
-    int8_t updateTimestamp(const Blob::AstCalStatData_t& ast);
+    int8_t updateTimestamp(const Blob::LightTimeData_t& ast);
 
 
     /** Añade una nueva acción en memoria
@@ -118,7 +118,7 @@ class Scheduler {
      *  @param ast_data Datos para obtener los criterios de ejecución actual (hora, fecha, periodo...)
      *  @return Acción en ejecución o NULL si no hay acciones que cumplan el criterio
      */
-    Blob::LightAction_t* findCurrAction(Blob::LightActionFlags filter, Blob::AstCalStatData_t& ast_data);
+    Blob::LightAction_t* findCurrAction(Blob::LightActionFlags filter, Blob::LightTimeData_t& ast_data);
 
 private:
 
@@ -129,7 +129,7 @@ private:
     const uint8_t _max_action_count;
 
     /** Parámetros de ejecución */
-    Blob::AstCalStatData_t _ast_data;
+    Blob::LightTimeData_t _ast_data;
     Blob::LightLuxLevel _lux;
 
     /** Parámetros de búsqueda y filtrado */
