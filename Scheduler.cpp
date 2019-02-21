@@ -42,7 +42,7 @@ static Blob::LightActionFlags weekDayFlagsFromTM(int wday){
 
 
 //------------------------------------------------------------------------------------
-static int32_t getExecutionTime(const Blob::LightAction_t* action, const Blob::AstCalStatData_t& ast_data){
+static int32_t getExecutionTime(const Blob::LightAction_t* action, const Blob::LightTimeData_t& ast_data){
 	int32_t result = -1;
 	tm now;
 	localtime_r(&ast_data.now, &now);
@@ -91,7 +91,7 @@ Scheduler::Scheduler(uint8_t action_count, Blob::LightAction_t* actions,FSManage
 	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Creando objeto");
 
     // borro propiedades a sus valores por defecto
-    memset(&_ast_data, 0, sizeof(Blob::AstCalStatData_t));
+    memset(&_ast_data, 0, sizeof(Blob::LightTimeData_t));
     _filter = Blob::LightNoActions;
     _lux = 0;
     
@@ -272,7 +272,7 @@ int8_t Scheduler::updateLux(Blob::LightLuxLevel lux){
 
 
 //------------------------------------------------------------------------------------
-int8_t Scheduler::updateTimestamp(const Blob::AstCalStatData_t& ast){
+int8_t Scheduler::updateTimestamp(const Blob::LightTimeData_t& ast){
 	_ast_data = ast;
 	DEBUG_TRACE_D(_EXPR_, _MODULE_, "Ejecutando scheduler con timestamp_flags=%x", _ast_data.flags);
 	for(int i=0;i<_max_action_count;i++){

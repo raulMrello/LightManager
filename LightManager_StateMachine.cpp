@@ -256,20 +256,23 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
         	char* pub_topic = (char*)Heap::memAlloc(MQ::MQClient::getMaxTopicLen());
 			MBED_ASSERT(pub_topic);
 			sprintf(pub_topic, "stat/boot/%s", _pub_topic_base);
-
+			Blob::NotificationData_t<Blob::LightBootData_t> *notif = new Blob::NotificationData_t<Blob::LightBootData_t>(_lightdata);
+			MBED_ASSERT(notif);
 			if(_json_supported){
-				cJSON* jboot = JsonParser::getJsonFromObj(_lightdata);
+				cJSON* jboot = JsonParser::getJsonFromNotification(*notif);
 				if(jboot){
 					char* jmsg = cJSON_Print(jboot);
 					cJSON_Delete(jboot);
 					MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
 					Heap::memFree(jmsg);
+					delete(notif);
 					Heap::memFree(pub_topic);
 					return State::HANDLED;
 				}
 			}
 
-			MQ::MQClient::publish(pub_topic, &_lightdata, sizeof(Blob::LightBootData_t), &_publicationCb);
+			MQ::MQClient::publish(pub_topic, notif, sizeof(Blob::NotificationData_t<Blob::LightBootData_t>), &_publicationCb);
+			delete(notif);
 			Heap::memFree(pub_topic);
 
             return State::HANDLED;
@@ -277,7 +280,7 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 
         // Procesa datos recibidos de la publicación en set/time
         case RecvTimeSet:{
-        	Blob::AstCalStatData_t ast = *(Blob::AstCalStatData_t*)st_msg->msg;
+        	Blob::LightTimeData_t ast = *(Blob::LightTimeData_t*)st_msg->msg;
 			int8_t new_out_value;
 			// ejecuta el scheduler y en caso de que haya un nuevo estado de la carga, lo notifica
 			if((new_out_value = _sched->updateTimestamp(ast)) != -1){
