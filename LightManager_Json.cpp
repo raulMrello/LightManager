@@ -326,10 +326,9 @@ uint32_t getLightBootFromJson(Blob::LightBootData_t &obj, cJSON* json){
 
 //------------------------------------------------------------------------------------
 uint32_t getLightLuxFromJson(Blob::LightLuxLevel &lux, cJSON* json){
-	cJSON *root = NULL;
 	cJSON *obj = NULL;
 	// key: luxLevel
-	if((obj = cJSON_GetObjectItem(root, JsonParser::p_luxLevel)) == NULL){
+	if((obj = cJSON_GetObjectItem(json, JsonParser::p_luxLevel)) == NULL){
 		return 0;
 	}
 	lux = obj->valueint;
