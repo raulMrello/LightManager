@@ -17,7 +17,7 @@
  *	Logger válido (ej: _debug)
  */
 static const char* _MODULE_ = "[LightM]........";
-#define _EXPR_	(_defdbg && !IS_ISR())
+#define _EXPR_	(true)
 
  
 
@@ -35,6 +35,7 @@ cJSON* getJsonFromLightCfg(const Blob::LightCfgData_t& cfg){
 	cJSON *light = NULL;
 
 	if((light=cJSON_CreateObject()) == NULL){
+		DEBUG_TRACE_E(_EXPR_, _MODULE_, "Error creando json");
 		return NULL;
 	}
 
@@ -47,6 +48,7 @@ cJSON* getJsonFromLightCfg(const Blob::LightCfgData_t& cfg){
 	// key: alsData
 	if((alsData=cJSON_CreateObject()) == NULL){
 		cJSON_Delete(light);
+		DEBUG_TRACE_E(_EXPR_, _MODULE_, "Error creando alsData");
 		return NULL;
 	}
 
@@ -54,6 +56,7 @@ cJSON* getJsonFromLightCfg(const Blob::LightCfgData_t& cfg){
 	if((value=cJSON_CreateObject()) == NULL){
 		cJSON_Delete(alsData);
 		cJSON_Delete(light);
+		DEBUG_TRACE_E(_EXPR_, _MODULE_, "Error creando alsData.lux");
 		return NULL;
 	}
 	cJSON_AddNumberToObject(value, JsonParser::p_min, cfg.alsData.lux.min);
@@ -65,6 +68,7 @@ cJSON* getJsonFromLightCfg(const Blob::LightCfgData_t& cfg){
 	// key: outData
 	if((outData=cJSON_CreateObject()) == NULL){
 		cJSON_Delete(light);
+		DEBUG_TRACE_E(_EXPR_, _MODULE_, "Error creando outData");
 		return NULL;
 	}
 	cJSON_AddNumberToObject(outData, JsonParser::p_mode, cfg.outData.mode);
@@ -74,6 +78,7 @@ cJSON* getJsonFromLightCfg(const Blob::LightCfgData_t& cfg){
 	if((curve=cJSON_CreateObject()) == NULL){
 		cJSON_Delete(outData);
 		cJSON_Delete(light);
+		DEBUG_TRACE_E(_EXPR_, _MODULE_, "Error creando outData.curve");
 		return NULL;
 	}
 	cJSON_AddNumberToObject(curve, JsonParser::p_samples, cfg.outData.curve.samples);
@@ -83,14 +88,16 @@ cJSON* getJsonFromLightCfg(const Blob::LightCfgData_t& cfg){
 		cJSON_Delete(curve);
 		cJSON_Delete(outData);
 		cJSON_Delete(light);
+		DEBUG_TRACE_E(_EXPR_, _MODULE_, "Error creando outData.curve.data[]");
 		return NULL;
 	}
-	for(int i=0; i < Blob::LightCurveSampleCount; i++){
+	for(int i=0; i < cfg.outData.curve.samples; i++){
 		if((value = cJSON_CreateNumber(cfg.outData.curve.data[i])) == NULL){
 			cJSON_Delete(array);
 			cJSON_Delete(curve);
 			cJSON_Delete(outData);
 			cJSON_Delete(light);
+			DEBUG_TRACE_E(_EXPR_, _MODULE_, "Error creando outData.curve.data[%d]",i);
 			return NULL;
 		}
 		cJSON_AddItemToArray(array, value);
@@ -102,13 +109,16 @@ cJSON* getJsonFromLightCfg(const Blob::LightCfgData_t& cfg){
 	if((array=cJSON_CreateArray()) == NULL){
 		cJSON_Delete(outData);
 		cJSON_Delete(light);
+		DEBUG_TRACE_E(_EXPR_, _MODULE_, "Error creando outData.actions[]");
 		return NULL;
 	}
+
 	for(int i=0; i < cfg.outData.numActions; i++){
 		if((value = cJSON_CreateObject()) == NULL){
 			cJSON_Delete(array);
 			cJSON_Delete(outData);
 			cJSON_Delete(light);
+			DEBUG_TRACE_E(_EXPR_, _MODULE_, "Error creando outData.actions[%d]",i);
 			return NULL;
 		}
 		cJSON_AddNumberToObject(value, JsonParser::p_id, cfg.outData.actions[i].id);
@@ -122,6 +132,7 @@ cJSON* getJsonFromLightCfg(const Blob::LightCfgData_t& cfg){
 			cJSON_Delete(array);
 			cJSON_Delete(outData);
 			cJSON_Delete(light);
+			DEBUG_TRACE_E(_EXPR_, _MODULE_, "Error creando outData.curve.data[%d].luxLevel",i);
 			return NULL;
 		}
 		cJSON_AddNumberToObject(luxLevel, JsonParser::p_min, cfg.outData.actions[i].luxLevel.min);
@@ -234,56 +245,62 @@ uint32_t getLightCfgFromJson(Blob::LightCfgData_t &cfg, cJSON* json){
 		}
 		if((obj = cJSON_GetObjectItem(outData, JsonParser::p_numActions)) != NULL){
 			cfg.outData.numActions = obj->valueint;
+			cfg.outData.numActions = (cfg.outData.numActions > Blob::MaxAllowedActionDataInArray)? Blob::MaxAllowedActionDataInArray : cfg.outData.numActions;
 		}
 
 		if((value = cJSON_GetObjectItem(outData, JsonParser::p_curve)) != NULL){
 			if((obj = cJSON_GetObjectItem(value, JsonParser::p_samples)) != NULL){
 				cfg.outData.curve.samples = obj->valueint;
+				cfg.outData.curve.samples = (cfg.outData.curve.samples > Blob::LightCurveSampleCount)? Blob::LightCurveSampleCount : cfg.outData.curve.samples;
 			}
 			if((obj = cJSON_GetObjectItem(value, JsonParser::p_data)) != NULL){
-				for(int i=0;i<cJSON_GetArraySize(obj);i++){
-					item = cJSON_GetArrayItem(obj, i);
-					cfg.outData.curve.data[i] = item->valueint;
+				if(cfg.outData.curve.samples == cJSON_GetArraySize(obj)){
+					for(int i=0;i<cfg.outData.curve.samples;i++){
+						item = cJSON_GetArrayItem(obj, i);
+						cfg.outData.curve.data[i] = item->valueint;
+					}
+					keys |= Blob::LightKeyCfgCurve;
 				}
 			}
-			keys |= Blob::LightKeyCfgCurve;
 		}
 
 		if((array = cJSON_GetObjectItem(outData, JsonParser::p_actions)) != NULL){
-			for(int i=0;i<cJSON_GetArraySize(array);i++){
-				value = cJSON_GetArrayItem(array, i);
-				if((obj = cJSON_GetObjectItem(value, JsonParser::p_id)) != NULL){
-					cfg.outData.actions[i].id = obj->valueint;
-				}
-				if((obj = cJSON_GetObjectItem(value, JsonParser::p_flags)) != NULL){
-					cfg.outData.actions[i].flags = (Blob::LightActionFlags)obj->valueint;
-				}
-				if((obj = cJSON_GetObjectItem(value, JsonParser::p_date)) != NULL){
-					cfg.outData.actions[i].date = obj->valueint;
-				}
-				if((obj = cJSON_GetObjectItem(value, JsonParser::p_time)) != NULL){
-					cfg.outData.actions[i].time = obj->valueint;
-				}
-				if((obj = cJSON_GetObjectItem(value, JsonParser::p_astCorr)) != NULL){
-					cfg.outData.actions[i].astCorr = obj->valueint;
-				}
-				if((obj = cJSON_GetObjectItem(value, JsonParser::p_outValue)) != NULL){
-					cfg.outData.actions[i].outValue = obj->valueint;
-				}
+			if(cfg.outData.numActions == cJSON_GetArraySize(array)){
+				for(int i=0;i<cfg.outData.numActions;i++){
+					value = cJSON_GetArrayItem(array, i);
+					if((obj = cJSON_GetObjectItem(value, JsonParser::p_id)) != NULL){
+						cfg.outData.actions[i].id = obj->valueint;
+					}
+					if((obj = cJSON_GetObjectItem(value, JsonParser::p_flags)) != NULL){
+						cfg.outData.actions[i].flags = (Blob::LightActionFlags)obj->valueint;
+					}
+					if((obj = cJSON_GetObjectItem(value, JsonParser::p_date)) != NULL){
+						cfg.outData.actions[i].date = obj->valueint;
+					}
+					if((obj = cJSON_GetObjectItem(value, JsonParser::p_time)) != NULL){
+						cfg.outData.actions[i].time = obj->valueint;
+					}
+					if((obj = cJSON_GetObjectItem(value, JsonParser::p_astCorr)) != NULL){
+						cfg.outData.actions[i].astCorr = obj->valueint;
+					}
+					if((obj = cJSON_GetObjectItem(value, JsonParser::p_outValue)) != NULL){
+						cfg.outData.actions[i].outValue = obj->valueint;
+					}
 
-				if((luxLevel = cJSON_GetObjectItem(value, JsonParser::p_luxLevel)) != NULL){
-					if((obj = cJSON_GetObjectItem(luxLevel, JsonParser::p_min)) != NULL){
-						cfg.outData.actions[i].luxLevel.min = obj->valueint;
-					}
-					if((obj = cJSON_GetObjectItem(luxLevel, JsonParser::p_max)) != NULL){
-						cfg.outData.actions[i].luxLevel.max = obj->valueint;
-					}
-					if((obj = cJSON_GetObjectItem(luxLevel, JsonParser::p_thres)) != NULL){
-						cfg.outData.actions[i].luxLevel.thres = obj->valueint;
+					if((luxLevel = cJSON_GetObjectItem(value, JsonParser::p_luxLevel)) != NULL){
+						if((obj = cJSON_GetObjectItem(luxLevel, JsonParser::p_min)) != NULL){
+							cfg.outData.actions[i].luxLevel.min = obj->valueint;
+						}
+						if((obj = cJSON_GetObjectItem(luxLevel, JsonParser::p_max)) != NULL){
+							cfg.outData.actions[i].luxLevel.max = obj->valueint;
+						}
+						if((obj = cJSON_GetObjectItem(luxLevel, JsonParser::p_thres)) != NULL){
+							cfg.outData.actions[i].luxLevel.thres = obj->valueint;
+						}
 					}
 				}
+				keys |= Blob::LightKeyCfgActs;
 			}
-			keys |= Blob::LightKeyCfgActs;
 		}
 	}
 	return keys;
