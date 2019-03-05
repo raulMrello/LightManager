@@ -119,8 +119,9 @@ enum LightKeyNames{
 	LightKeyCfgOutm		= (1 << 3),
 	LightKeyCfgCurve	= (1 << 4),
 	LightKeyCfgActs		= (1 << 5),
+	LightKeyCfgVerbosity= (1 << 6),
 	//
-	LightKeyCfgAll		= 0x3F,
+	LightKeyCfgAll		= 0x7F,
 };
 
 
@@ -161,18 +162,20 @@ struct __packed LightOutData_t{
 };
 
 
-  /** Estructura de datos para la configuración en bloque del objeto LightManager.
-   * 	Se forma por las distintas estructuras de datos de configuración
-   * 	@var updFlags Flags de configuración de notificación de cambios de configuración
-   * 	@var evtFlags Flags de configuración de notificación de eventos
-   * 	@var alsData Datos de ajuste del sensor ALS
-   * 	@var outData Datos de ajuste de la salida de control
-   */
+/** Estructura de datos para la configuración en bloque del objeto LightManager.
+ * 	Se forma por las distintas estructuras de datos de configuración
+ * 	@var updFlags Flags de configuración de notificación de cambios de configuración
+ * 	@var evtFlags Flags de configuración de notificación de eventos
+ * 	@var alsData Datos de ajuste del sensor ALS
+ * 	@var outData Datos de ajuste de la salida de control
+ * 	@var verbosity Nivel de depuración
+ */
 struct __packed LightCfgData_t{
 	LightUpdFlags updFlagMask;
 	LightEvtFlags evtFlagMask;
 	LightAlsData_t alsData;
   	LightOutData_t outData;
+	esp_log_level_t verbosity;
 };
 
 

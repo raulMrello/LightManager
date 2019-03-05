@@ -120,6 +120,13 @@ class Scheduler {
      */
     Blob::LightAction_t* findCurrAction(Blob::LightActionFlags filter, Blob::LightTimeData_t& ast_data);
 
+
+    /**
+     * Establece el nivel de las trazas de depuración
+     * @param verbosity Nivel de depuración
+     */
+    void setVerbosity(esp_log_level_t verbosity);
+
 private:
 
     /** Puntero al array de acciones */

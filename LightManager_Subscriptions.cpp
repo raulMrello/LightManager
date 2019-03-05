@@ -15,7 +15,7 @@
  *	Logger válido (ej: _debug)
  */
 static const char* _MODULE_ = "[LightM]........";
-#define _EXPR_	(_defdbg && !IS_ISR())
+#define _EXPR_	(!IS_ISR())
 
  
 //------------------------------------------------------------------------------------
