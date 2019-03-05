@@ -15,7 +15,7 @@
  *	Logger válido (ej: _debug)
  */
 static const char* _MODULE_ = "[LightM]........";
-#define _EXPR_	(_defdbg && !IS_ISR())
+#define _EXPR_	(!IS_ISR())
 
  
 //------------------------------------------------------------------------------------
@@ -49,6 +49,7 @@ void LightManager::setDefaultConfig(){
 	// borra todos los programas
 	_sched->clrActions();
 	_lightdata.cfg.outData.numActions = _sched->getActionCount();
+	_lightdata.cfg.verbosity = ESP_LOG_DEBUG;
 
 	saveConfig();
 }
@@ -100,6 +101,10 @@ void LightManager::restoreConfig(){
 		DEBUG_TRACE_W(_EXPR_, _MODULE_, "ERR_NVS leyendo Checksum!");
 		success = false;
 	}
+	if(!restoreParameter("LightVerbosity", &_lightdata.cfg.verbosity, sizeof(esp_log_level_t), NVSInterface::TypeUint32)){
+		DEBUG_TRACE_W(_EXPR_, _MODULE_, "ERR_NVS leyendo verbosity!");
+		success = false;
+	}
 
 	if(success){
 		// chequea el checksum crc32 y después la integridad de los datos
@@ -112,6 +117,8 @@ void LightManager::restoreConfig(){
     	}
     	else{
     		DEBUG_TRACE_W(_EXPR_, _MODULE_, "Check de integridad OK!");
+    		esp_log_level_set(_MODULE_, _lightdata.cfg.verbosity);
+    		_sched->setVerbosity(_lightdata.cfg.verbosity);
     		return;
     	}
 	}
@@ -144,6 +151,13 @@ void LightManager::saveConfig(){
 	}
 	if(!_sched->saveActionList()){
 		DEBUG_TRACE_W(_EXPR_, _MODULE_, "ERR_NVS grabando OutDataActions!");
+	}
+	if(!saveParameter("LightVerbosity", &_lightdata.cfg.verbosity, sizeof(esp_log_level_t), NVSInterface::TypeUint32)){
+		DEBUG_TRACE_W(_EXPR_, _MODULE_, "ERR_NVS grabando verbosity!");
+	}
+	else{
+		esp_log_level_set(_MODULE_, _lightdata.cfg.verbosity);
+		_sched->setVerbosity(_lightdata.cfg.verbosity);
 	}
 
 	uint32_t crc = Blob::getCRC32(&_lightdata.cfg, sizeof(Blob::LightCfgData_t));
@@ -236,6 +250,9 @@ void LightManager::_updateConfig(const Blob::LightCfgData_t& cfg, uint32_t keys,
 		_lightdata.cfg.outData.numActions = cfg.outData.numActions;
 		for(int i=0;i<cfg.outData.numActions;i++)
 			_lightdata.cfg.outData.actions[cfg.outData.actions[i].id] = cfg.outData.actions[i];
+	}
+	if(keys & Blob::LightKeyCfgVerbosity){
+		_lightdata.cfg.verbosity = cfg.verbosity;
 	}
 _updateConfigExit:
 	strcpy(err.descr, Blob::errList[err.code]);

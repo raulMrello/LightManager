@@ -45,6 +45,9 @@ cJSON* getJsonFromLightCfg(const Blob::LightCfgData_t& cfg){
 	// key: light.evtFlags
 	cJSON_AddNumberToObject(light, JsonParser::p_evtFlags, cfg.evtFlagMask);
 
+	// key: fwupd.verbosity
+	cJSON_AddNumberToObject(light, JsonParser::p_verbosity, cfg.verbosity);
+
 	// key: alsData
 	if((alsData=cJSON_CreateObject()) == NULL){
 		cJSON_Delete(light);
@@ -219,6 +222,10 @@ uint32_t getLightCfgFromJson(Blob::LightCfgData_t &cfg, cJSON* json){
 	if((obj = cJSON_GetObjectItem(json, JsonParser::p_evtFlags)) != NULL){
 		cfg.evtFlagMask = (Blob::LightEvtFlags)obj->valueint;
 		keys |= Blob::LightKeyCfgEvt;
+	}
+	if((obj = cJSON_GetObjectItem(json,JsonParser::p_verbosity)) != NULL){
+		cfg.verbosity = obj->valueint;
+		keys |= Blob::LightKeyCfgVerbosity;
 	}
 
 	//key: alsData

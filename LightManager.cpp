@@ -15,7 +15,7 @@
  *	Logger válido (ej: _debug)
  */
 static const char* _MODULE_ = "[LightM]........";
-#define _EXPR_	(_defdbg && !IS_ISR())
+#define _EXPR_	(!IS_ISR())
 
  
 //------------------------------------------------------------------------------------
@@ -32,6 +32,12 @@ LightManager::LightManager(PinName pin010, FSManager* fs, bool defdbg) : ActiveM
 	_json_supported = true;
 	#endif
 
+    if(defdbg){
+    	esp_log_level_set(_MODULE_, ESP_LOG_DEBUG);
+    }
+    else{
+    	esp_log_level_set(_MODULE_, ESP_LOG_WARN);
+    }
 
 	if(pin010 == NC){
 		_driver010 = NULL;
@@ -70,7 +76,7 @@ void LightManager::stopSimulator() {
 osStatus LightManager::putMessage(State::Msg *msg){
     osStatus ost = _queue.put(msg, ActiveModule::DefaultPutTimeout);
     if(ost != osOK){
-        DEBUG_TRACE_I(_EXPR_, _MODULE_, "QUEUE_PUT_ERROR %d", ost);
+        DEBUG_TRACE_E(_EXPR_, _MODULE_, "QUEUE_PUT_ERROR %d", ost);
     }
     return ost;
 }
