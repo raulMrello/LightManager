@@ -16,8 +16,8 @@
 /** Macro para imprimir trazas de depuración, siempre que se haya configurado un objeto
  *	Logger válido (ej: _debug)
  */
-static const char* _MODULE_ = "[RlyMan]........";
-#define _EXPR_	(_defdbg && !IS_ISR())
+static const char* _MODULE_ = "[Schduler]......";
+#define _EXPR_	(!IS_ISR())
 
 
 //------------------------------------------------------------------------------------
@@ -88,7 +88,15 @@ static int32_t getExecutionTime(const Blob::LightAction_t* action, const Blob::L
 
 //------------------------------------------------------------------------------------
 Scheduler::Scheduler(uint8_t action_count, Blob::LightAction_t* actions,FSManager* fs, bool defdbg) : _max_action_count(action_count), _fs(fs), _defdbg(defdbg) {
-	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Creando objeto");
+
+    if(defdbg){
+    	esp_log_level_set(_MODULE_, ESP_LOG_DEBUG);
+    }
+    else{
+    	esp_log_level_set(_MODULE_, ESP_LOG_WARN);
+    }
+
+	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Creando Scheduler");
 
     // borro propiedades a sus valores por defecto
     memset(&_ast_data, 0, sizeof(Blob::LightTimeData_t));
@@ -97,7 +105,7 @@ Scheduler::Scheduler(uint8_t action_count, Blob::LightAction_t* actions,FSManage
     
     _action_list = actions;
 
-    DEBUG_TRACE_I(_EXPR_, _MODULE_, "Objeto listo!");
+    DEBUG_TRACE_I(_EXPR_, _MODULE_, "Scheduler OK!");
 }
 
 
@@ -290,6 +298,13 @@ int8_t Scheduler::updateTimestamp(const Blob::LightTimeData_t& ast){
 	}
 	return -1;
 }
+
+
+//------------------------------------------------------------------------------------
+void Scheduler::setVerbosity(esp_log_level_t verbosity){
+	esp_log_level_set(_MODULE_, verbosity);
+}
+
 
 
 //------------------------------------------------------------------------------------

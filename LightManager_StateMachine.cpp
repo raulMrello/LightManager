@@ -15,7 +15,7 @@
  *	Logger válido (ej: _debug)
  */
 static const char* _MODULE_ = "[LightM]........";
-#define _EXPR_	(_defdbg && !IS_ISR())
+#define _EXPR_	(!IS_ISR())
 
  
 //------------------------------------------------------------------------------------
@@ -92,7 +92,7 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
         	// almacena en el sistema de ficheros
         	saveConfig();
 
-        	DEBUG_TRACE_D(_EXPR_, _MODULE_, "Config actualizada");
+        	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Config actualizada");
 
         	// si está habilitada la notificación de actualización, lo notifica
         	if((_lightdata.cfg.updFlagMask & Blob::EnableLightCfgUpdNotif) != 0){
@@ -153,7 +153,7 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 						_driver010->setLevel(_applyCurve(_lightdata.stat.outValue));
 					}
 
-					DEBUG_TRACE_D(_EXPR_, _MODULE_, "LIGHT_VALUE_SET, actualizado = %d", _lightdata.stat.outValue);
+					DEBUG_TRACE_I(_EXPR_, _MODULE_, "LIGHT_VALUE_SET, actualizado = %d", _lightdata.stat.outValue);
 				}
         	}
 
