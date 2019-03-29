@@ -25,7 +25,6 @@
 
 #include "mbed.h"
 #include "LightManagerBlob.h"
-#include "AstCalendarBlob.h"
 #include "FSManager.h"
 #include "List.h"
    
@@ -118,7 +117,7 @@ class Scheduler {
      *  @param ast_data Datos para obtener los criterios de ejecución actual (hora, fecha, periodo...)
      *  @return Acción en ejecución o NULL si no hay acciones que cumplan el criterio
      */
-    Blob::LightAction_t* findCurrAction(Blob::LightActionFlags filter, Blob::LightTimeData_t& ast_data);
+    Blob::LightAction_t* findCurrAction(Blob::LightActionFlags filter, const Blob::LightTimeData_t& data);
 
 
     /**
