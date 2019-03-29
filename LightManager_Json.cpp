@@ -200,7 +200,7 @@ cJSON* getJsonFromLightLux(const Blob::LightLuxLevel& lux){
 
 //------------------------------------------------------------------------------------
 cJSON* getJsonFromLightTime(const Blob::LightTimeData_t& t){
-	return JSON::getJsonFromAstCalStat(t);
+	return JSON::getJsonFromCalendarClock(t, ObjSelectAll);
 }
 
 
@@ -361,8 +361,8 @@ uint32_t getLightLuxFromJson(Blob::LightLuxLevel &lux, cJSON* json){
 
 
 //------------------------------------------------------------------------------------
-uint32_t getLightTimeFromJson(Blob::AstCalStatData_t &obj, cJSON* json){
-	return JSON::getAstCalStatFromJson(obj, json);
+uint32_t getLightTimeFromJson(calendar_clock &obj, cJSON* json){
+	return JSON::getCalendarClockFromJson(obj, json);
 }
 
 }	// end namespace JSON
