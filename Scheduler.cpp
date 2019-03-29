@@ -42,16 +42,14 @@ static Blob::LightActionFlags weekDayFlagsFromTM(int wday){
 
 
 //------------------------------------------------------------------------------------
-static int32_t getExecutionTime(const Blob::LightAction_t* action, const Blob::LightTimeData_t& ast_data){
+static int32_t getExecutionTime(const Blob::LightAction_t* action, const Blob::LightTimeData_t& data){
 	int32_t result = -1;
 	tm now;
-	localtime_r(&ast_data.now, &now);
-	uint16_t minutes = (now.tm_hour * 60) + now.tm_min;
+	localtime_r(&data.stat.localtime, &now);
 	uint16_t date = now.tm_mday * 128 + now.tm_mon;
-	Blob::LightActionFlags flags = weekDayFlagsFromTM(now.tm_wday);
 
 	// si la máscara de periodos no coincide, termina con error
-	if((action->flags & (1 << ast_data.period)) == 0)
+	if((action->flags & (1 << data.stat.period)) == 0 && data.stat.period != -1)
 		return -1;
 
 	// si la acción es a una fecha concreta y no coincide, termina
@@ -65,12 +63,19 @@ static int32_t getExecutionTime(const Blob::LightAction_t* action, const Blob::L
 	// en este punto, la acción es ejecutable hoy:
 
 	// si es al orto...
+	time_t period_corr = 0;
 	if(action->flags & Blob::LightActionDawn){
-		result = ast_data.astData.wdowDawnStart + action->astCorr;
+		if(data.stat.period >= 0){
+			period_corr = data.cfg.geoloc.astCorr[data.stat.period][0];
+		}
+		result = action->astCorr + data.stat.dawn + period_corr;
 	}
 	// si es al ocaso...
 	else if(action->flags & Blob::LightActionDusk){
-		result = ast_data.astData.wdowDuskStart + action->astCorr;
+		if(data.stat.period >= 0){
+			period_corr = data.cfg.geoloc.astCorr[data.stat.period][1];
+		}
+		result = action->astCorr + data.stat.dusk + period_corr;
 	}
 	// si no, es que es a una hora fija
 	else if(action->flags & (Blob::LightActionFixTime)){
@@ -228,16 +233,16 @@ bool Scheduler::checkIntegrity(){
 
 
 //------------------------------------------------------------------------------------
-Blob::LightAction_t* Scheduler::findCurrAction(Blob::LightActionFlags filter, Blob::AstCalStatData_t& ast_data){
+Blob::LightAction_t* Scheduler::findCurrAction(Blob::LightActionFlags filter, const Blob::LightTimeData_t& data){
 	tm now;
-	localtime_r(&ast_data.now, &now);
+	localtime_r(&data.stat.localtime, &now);
 	uint16_t curr_time = (now.tm_hour * 60) + now.tm_min;
 	int32_t exec_time = -1;
 	Blob::LightAction_t* curr = NULL;
 
 	for(int i=0;i<_max_action_count;i++){
 		if(_action_list[i].id != 0 && (_action_list[i].flags & filter) != 0){
-			int32_t action_time = getExecutionTime(&_action_list[i], ast_data);
+			int32_t action_time = getExecutionTime(&_action_list[i], data);
 			if(action_time >= 0 && action_time <= curr_time && action_time > exec_time){
 				curr = &_action_list[i];
 				exec_time = action_time;
@@ -282,13 +287,13 @@ int8_t Scheduler::updateLux(Blob::LightLuxLevel lux){
 //------------------------------------------------------------------------------------
 int8_t Scheduler::updateTimestamp(const Blob::LightTimeData_t& ast){
 	_ast_data = ast;
-	DEBUG_TRACE_D(_EXPR_, _MODULE_, "Ejecutando scheduler con timestamp_flags=%x", _ast_data.flags);
+	DEBUG_TRACE_D(_EXPR_, _MODULE_, "Ejecutando scheduler con timestamp_flags=%x", _ast_data.stat.flags);
 	for(int i=0;i<_max_action_count;i++){
 		// busca acciones asociadas a una hora fija...
 		if(_action_list[i].id >= 0 && (_action_list[i].flags & Blob::LightActionFixTime) != 0){
 			// si la hora coincide y los días de la semana también, se ejecuta
 			tm now;
-			localtime_r(&_ast_data.now, &now);
+			localtime_r(&_ast_data.stat.localtime, &now);
 			uint16_t hhmm = now.tm_hour*60 + now.tm_min;
 			if(hhmm == _action_list[i].time && (weekDayFlagsFromTM(now.tm_wday) & _action_list[i].flags) !=0){
 				DEBUG_TRACE_D(_EXPR_, _MODULE_, "Prog id=%d, ejecutado por timestamp=%d, out=%d", _action_list[i].id, hhmm, _action_list[i].outValue);

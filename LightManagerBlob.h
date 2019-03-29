@@ -16,8 +16,8 @@
 #include "Blob.h"
 #include "mbed.h"
 
-/** Incluye referencia a este módulo para hacer uso de los eventos temporales <Blob::AstCalStatData_t> */
-#include "AstCalendarBlob.h"
+/** Incluye referencia a este módulo para hacer uso de los eventos temporales <CalendarClockEvt...> */
+#include "calendar_objects.h"
   
 
 
@@ -198,8 +198,8 @@ struct __packed LightBootData_t{
 	LightStatData_t stat;
 };
 
-/** Estructura de eventos temporales. Clona el objeto proporcionado por AstCalendar */
-typedef Blob::AstCalStatData_t LightTimeData_t;
+
+typedef calendar_clock LightTimeData_t;
 
 }	// end namespace Blob
 
