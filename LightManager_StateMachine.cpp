@@ -73,10 +73,16 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 				if(_json_supported){
 					cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
 					if(jresp){
-						char* jmsg = cJSON_Print(jresp);
+						char* jmsg = cJSON_PrintUnformatted(jresp);
 						cJSON_Delete(jresp);
 						MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
 						Heap::memFree(jmsg);
+						delete(resp);
+						Heap::memFree(pub_topic);
+						return State::HANDLED;
+					}
+					else{
+						DEBUG_TRACE_E(_EXPR_, _MODULE_, "ERROR al formar Blob::Response_t<Blob::LightCfgData_t>");
 						delete(resp);
 						Heap::memFree(pub_topic);
 						return State::HANDLED;
@@ -104,10 +110,16 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 				if(_json_supported){
 					cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
 					if(jresp){
-						char* jmsg = cJSON_Print(jresp);
+						char* jmsg = cJSON_PrintUnformatted(jresp);
 						cJSON_Delete(jresp);
 						MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
 						Heap::memFree(jmsg);
+						delete(resp);
+						Heap::memFree(pub_topic);
+						return State::HANDLED;
+					}
+					else{
+						DEBUG_TRACE_E(_EXPR_, _MODULE_, "ERROR al formar JsonParser::getJsonFromResponse(*resp)");
 						delete(resp);
 						Heap::memFree(pub_topic);
 						return State::HANDLED;
@@ -166,10 +178,16 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 			if(_json_supported){
 				cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
 				if(jresp){
-					char* jmsg = cJSON_Print(jresp);
+					char* jmsg = cJSON_PrintUnformatted(jresp);
 					cJSON_Delete(jresp);
 					MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
 					Heap::memFree(jmsg);
+					delete(resp);
+					Heap::memFree(pub_topic);
+					return State::HANDLED;
+				}
+				else{
+					DEBUG_TRACE_E(_EXPR_, _MODULE_, "ERROR al formar JsonParser::getJsonFromResponse(*resp)");
 					delete(resp);
 					Heap::memFree(pub_topic);
 					return State::HANDLED;
@@ -197,10 +215,16 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 			if(_json_supported){
 				cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
 				if(jresp){
-					char* jmsg = cJSON_Print(jresp);
+					char* jmsg = cJSON_PrintUnformatted(jresp);
 					cJSON_Delete(jresp);
 					MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
 					Heap::memFree(jmsg);
+					delete(resp);
+					Heap::memFree(pub_topic);
+					return State::HANDLED;
+				}
+				else{
+					DEBUG_TRACE_E(_EXPR_, _MODULE_, "ERROR al formar JsonParser::getJsonFromResponse(*resp)");
 					delete(resp);
 					Heap::memFree(pub_topic);
 					return State::HANDLED;
@@ -233,10 +257,16 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 			if(_json_supported){
 				cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
 				if(jresp){
-					char* jmsg = cJSON_Print(jresp);
+					char* jmsg = cJSON_PrintUnformatted(jresp);
 					cJSON_Delete(jresp);
 					MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
 					Heap::memFree(jmsg);
+					delete(resp);
+					Heap::memFree(pub_topic);
+					return State::HANDLED;
+				}
+				else{
+					DEBUG_TRACE_E(_EXPR_, _MODULE_, "ERROR al formar JsonParser::getJsonFromResponse(*resp)");
 					delete(resp);
 					Heap::memFree(pub_topic);
 					return State::HANDLED;
@@ -261,10 +291,16 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 			if(_json_supported){
 				cJSON* jboot = JsonParser::getJsonFromNotification(*notif);
 				if(jboot){
-					char* jmsg = cJSON_Print(jboot);
+					char* jmsg = cJSON_PrintUnformatted(jboot);
 					cJSON_Delete(jboot);
 					MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
 					Heap::memFree(jmsg);
+					delete(notif);
+					Heap::memFree(pub_topic);
+					return State::HANDLED;
+				}
+				else{
+					DEBUG_TRACE_E(_EXPR_, _MODULE_, "ERROR al formar JsonParser::getJsonFromNotification(*notif)");
 					delete(notif);
 					Heap::memFree(pub_topic);
 					return State::HANDLED;
