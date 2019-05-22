@@ -110,7 +110,7 @@ TEST_CASE("JSON support .........................", "[LightManager]"){
 	TEST_ASSERT_NOT_NULL(greq);
 	cJSON* jreq = JsonParser::getJsonFromObj(*greq);
 	TEST_ASSERT_NOT_NULL(jreq);
-	msg = cJSON_Print(jreq);
+	msg = cJSON_PrintUnformatted(jreq);
 	TEST_ASSERT_NOT_NULL(msg);
 	cJSON_Delete(jreq);
 	delete(greq);
@@ -137,7 +137,7 @@ TEST_CASE("JSON support .........................", "[LightManager]"){
 	TEST_ASSERT_NOT_NULL(greq);
 	jreq = JsonParser::getJsonFromObj(*greq);
 	TEST_ASSERT_NOT_NULL(jreq);
-	msg = cJSON_Print(jreq);
+	msg = cJSON_PrintUnformatted(jreq);
 	TEST_ASSERT_NOT_NULL(msg);
 	cJSON_Delete(jreq);
 	delete(greq);
@@ -189,7 +189,7 @@ TEST_CASE("JSON support .........................", "[LightManager]"){
 
 	jreq = JsonParser::getJsonFromSetRequest(req, JsonParser::p_data);
 	TEST_ASSERT_NOT_NULL(jreq);
-	msg = cJSON_Print(jreq);
+	msg = cJSON_PrintUnformatted(jreq);
 	TEST_ASSERT_NOT_NULL(msg);
 	cJSON_Delete(jreq);
 
@@ -362,7 +362,7 @@ static void subscriptionCb(const char* topic, void* msg, uint16_t msg_len){
 			if(msg_len == sizeof(Blob::Response_t<Blob::LightCfgData_t>)){
 				cJSON* obj = JsonParser::getJsonFromResponse(*((Blob::Response_t<Blob::LightCfgData_t>*)msg));
 				if(obj){
-					char* sobj = cJSON_Print(obj);
+					char* sobj = cJSON_PrintUnformatted(obj);
 					cJSON_Delete(obj);
 					DEBUG_TRACE_I(_EXPR_, _MODULE_, "%s", sobj);
 					Heap::memFree(sobj);
@@ -371,7 +371,7 @@ static void subscriptionCb(const char* topic, void* msg, uint16_t msg_len){
 			else if(msg_len == sizeof(Blob::LightCfgData_t)){
 				cJSON* obj = JsonParser::getJsonFromObj(*((Blob::LightCfgData_t*)msg));
 				if(obj){
-					char* sobj = cJSON_Print(obj);
+					char* sobj = cJSON_PrintUnformatted(obj);
 					cJSON_Delete(obj);
 					DEBUG_TRACE_I(_EXPR_, _MODULE_, "%s", sobj);
 					Heap::memFree(sobj);
@@ -383,7 +383,7 @@ static void subscriptionCb(const char* topic, void* msg, uint16_t msg_len){
 			if(msg_len == sizeof(Blob::Response_t<Blob::LightStatData_t>)){
 				cJSON* obj = JsonParser::getJsonFromResponse(*((Blob::Response_t<Blob::LightStatData_t>*)msg));
 				if(obj){
-					char* sobj = cJSON_Print(obj);
+					char* sobj = cJSON_PrintUnformatted(obj);
 					cJSON_Delete(obj);
 					DEBUG_TRACE_I(_EXPR_, _MODULE_, "%s", sobj);
 					Heap::memFree(sobj);
@@ -392,7 +392,7 @@ static void subscriptionCb(const char* topic, void* msg, uint16_t msg_len){
 			else if(msg_len == sizeof(Blob::LightStatData_t)){
 				cJSON* obj = JsonParser::getJsonFromObj(*((Blob::LightStatData_t*)msg));
 				if(obj){
-					char* sobj = cJSON_Print(obj);
+					char* sobj = cJSON_PrintUnformatted(obj);
 					cJSON_Delete(obj);
 					DEBUG_TRACE_I(_EXPR_, _MODULE_, "%s", sobj);
 					Heap::memFree(sobj);
@@ -404,7 +404,7 @@ static void subscriptionCb(const char* topic, void* msg, uint16_t msg_len){
 				Blob::LightBootData_t* boot = (Blob::LightBootData_t*)msg;
 				cJSON* obj = JsonParser::getJsonFromObj(*((Blob::LightBootData_t*)msg));
 				if(obj){
-					char* sobj = cJSON_Print(obj);
+					char* sobj = cJSON_PrintUnformatted(obj);
 					cJSON_Delete(obj);
 					DEBUG_TRACE_I(_EXPR_, _MODULE_, "%s", sobj);
 					Heap::memFree(sobj);

@@ -209,7 +209,7 @@ void LightManager::_updateAndNotify(uint8_t value){
 	if(_json_supported){
 		cJSON* jboot = JsonParser::getJsonFromNotification(*notif);
 		if(jboot){
-			char* jmsg = cJSON_Print(jboot);
+			char* jmsg = cJSON_PrintUnformatted(jboot);
 			cJSON_Delete(jboot);
 			MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
 			Heap::memFree(jmsg);
