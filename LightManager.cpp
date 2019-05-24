@@ -116,24 +116,13 @@ void LightManager::eventSimulatorCb() {
 
 		if(_json_supported){
 			cJSON* jboot = JsonParser::getJsonFromNotification(*notif);
-			if(jboot){
-				char* jmsg = cJSON_PrintUnformatted(jboot);
-				cJSON_Delete(jboot);
-				MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
-				Heap::memFree(jmsg);
-				delete(notif);
-				Heap::memFree(pub_topic);
-				return;
-			}
-			else{
-				DEBUG_TRACE_E(_EXPR_, _MODULE_, "ERROR al formar JsonParser::getJsonFromNotification(*notif)");
-				delete(notif);
-				Heap::memFree(pub_topic);
-				return;
-			}
+			MBED_ASSERT(jboot);
+			MQ::MQClient::publish(pub_topic, jboot, sizeof(cJSON*), &_publicationCb);
+			cJSON_Delete(jboot);
 		}
-
-		MQ::MQClient::publish(pub_topic, notif, sizeof(Blob::NotificationData_t<Blob::LightStatData_t>), &_publicationCb);
+		else{
+			MQ::MQClient::publish(pub_topic, notif, sizeof(Blob::NotificationData_t<Blob::LightStatData_t>), &_publicationCb);
+		}
 		delete(notif);
 		Heap::memFree(pub_topic);
 	}

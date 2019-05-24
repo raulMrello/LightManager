@@ -72,24 +72,13 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 
 				if(_json_supported){
 					cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
-					if(jresp){
-						char* jmsg = cJSON_PrintUnformatted(jresp);
-						cJSON_Delete(jresp);
-						MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
-						Heap::memFree(jmsg);
-						delete(resp);
-						Heap::memFree(pub_topic);
-						return State::HANDLED;
-					}
-					else{
-						DEBUG_TRACE_E(_EXPR_, _MODULE_, "ERROR al formar Blob::Response_t<Blob::LightCfgData_t>");
-						delete(resp);
-						Heap::memFree(pub_topic);
-						return State::HANDLED;
-					}
+					MBED_ASSERT(jresp);
+					MQ::MQClient::publish(pub_topic, jresp, sizeof(cJSON*), &_publicationCb);
+					cJSON_Delete(jresp);
 				}
-
-				MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<Blob::LightCfgData_t>), &_publicationCb);
+				else{
+					MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<Blob::LightCfgData_t>), &_publicationCb);
+				}
 				delete(resp);
 				Heap::memFree(pub_topic);
 				return State::HANDLED;
@@ -109,24 +98,13 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 
 				if(_json_supported){
 					cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
-					if(jresp){
-						char* jmsg = cJSON_PrintUnformatted(jresp);
-						cJSON_Delete(jresp);
-						MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
-						Heap::memFree(jmsg);
-						delete(resp);
-						Heap::memFree(pub_topic);
-						return State::HANDLED;
-					}
-					else{
-						DEBUG_TRACE_E(_EXPR_, _MODULE_, "ERROR al formar JsonParser::getJsonFromResponse(*resp)");
-						delete(resp);
-						Heap::memFree(pub_topic);
-						return State::HANDLED;
-					}
+					MBED_ASSERT(jresp);
+					MQ::MQClient::publish(pub_topic, jresp, sizeof(cJSON*), &_publicationCb);
+					cJSON_Delete(jresp);
 				}
-
-				MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<Blob::LightCfgData_t>), &_publicationCb);
+				else{
+					MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<Blob::LightCfgData_t>), &_publicationCb);
+				}
 				delete(resp);
 				Heap::memFree(pub_topic);
         	}
@@ -174,27 +152,16 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 			MBED_ASSERT(pub_topic);
 			sprintf(pub_topic, "stat/value/%s", _pub_topic_base);
 			Blob::Response_t<Blob::LightStatData_t>* resp = new Blob::Response_t<Blob::LightStatData_t>(req->idTrans, req->_error, _lightdata.stat);
-
+			MBED_ASSERT(resp);
 			if(_json_supported){
 				cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
-				if(jresp){
-					char* jmsg = cJSON_PrintUnformatted(jresp);
-					cJSON_Delete(jresp);
-					MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
-					Heap::memFree(jmsg);
-					delete(resp);
-					Heap::memFree(pub_topic);
-					return State::HANDLED;
-				}
-				else{
-					DEBUG_TRACE_E(_EXPR_, _MODULE_, "ERROR al formar JsonParser::getJsonFromResponse(*resp)");
-					delete(resp);
-					Heap::memFree(pub_topic);
-					return State::HANDLED;
-				}
+				MBED_ASSERT(jresp);
+				MQ::MQClient::publish(pub_topic, jresp, sizeof(cJSON*), &_publicationCb);
+				cJSON_Delete(jresp);
 			}
-
-			MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<Blob::LightStatData_t>), &_publicationCb);
+			else{
+				MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<Blob::LightStatData_t>), &_publicationCb);
+			}
 			delete(resp);
 			Heap::memFree(pub_topic);
         	return State::HANDLED;
@@ -211,30 +178,17 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 
 			// responde con los datos solicitados y con los errores (si hubiera) de la decodificación de la solicitud
 			Blob::Response_t<Blob::LightCfgData_t>* resp = new Blob::Response_t<Blob::LightCfgData_t>(req->idTrans, req->_error, _lightdata.cfg);
-
+			MBED_ASSERT(resp);
 			if(_json_supported){
 				cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
-				if(jresp){
-					char* jmsg = cJSON_PrintUnformatted(jresp);
-					cJSON_Delete(jresp);
-					MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
-					Heap::memFree(jmsg);
-					delete(resp);
-					Heap::memFree(pub_topic);
-					return State::HANDLED;
-				}
-				else{
-					DEBUG_TRACE_E(_EXPR_, _MODULE_, "ERROR al formar JsonParser::getJsonFromResponse(*resp)");
-					delete(resp);
-					Heap::memFree(pub_topic);
-					return State::HANDLED;
-				}
+				MBED_ASSERT(jresp);
+				MQ::MQClient::publish(pub_topic, jresp, sizeof(cJSON*), &_publicationCb);
+				cJSON_Delete(jresp);
 			}
-
-			MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<Blob::LightCfgData_t>), &_publicationCb);
+			else{
+				MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<Blob::LightCfgData_t>), &_publicationCb);
+			}
 			delete(resp);
-
-        	// libera la memoria asignada al topic de publicación
 			Heap::memFree(pub_topic);
             return State::HANDLED;
         }
@@ -251,32 +205,21 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 
 			// responde con los datos solicitados y con los errores (si hubiera) de la decodificación de la solicitud
 			Blob::Response_t<Blob::LightStatData_t>* resp = new Blob::Response_t<Blob::LightStatData_t>(req->idTrans, req->_error, _lightdata.stat);
+			MBED_ASSERT(resp);
+
 			// borra los flags de evento ya que es una respuesta sin más
 			resp->data.flags = Blob::LightNoEvents;
 
 			if(_json_supported){
 				cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
-				if(jresp){
-					char* jmsg = cJSON_PrintUnformatted(jresp);
-					cJSON_Delete(jresp);
-					MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
-					Heap::memFree(jmsg);
-					delete(resp);
-					Heap::memFree(pub_topic);
-					return State::HANDLED;
-				}
-				else{
-					DEBUG_TRACE_E(_EXPR_, _MODULE_, "ERROR al formar JsonParser::getJsonFromResponse(*resp)");
-					delete(resp);
-					Heap::memFree(pub_topic);
-					return State::HANDLED;
-				}
+				MBED_ASSERT(jresp);
+				MQ::MQClient::publish(pub_topic, jresp, sizeof(cJSON*), &_publicationCb);
+				cJSON_Delete(jresp);
 			}
-
-			MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<Blob::LightStatData_t>), &_publicationCb);
+			else {
+				MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<Blob::LightStatData_t>), &_publicationCb);
+			}
 			delete(resp);
-
-        	// libera la memoria asignada al topic de publicación
 			Heap::memFree(pub_topic);
             return State::HANDLED;
         }
@@ -290,27 +233,15 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 			MBED_ASSERT(notif);
 			if(_json_supported){
 				cJSON* jboot = JsonParser::getJsonFromNotification(*notif);
-				if(jboot){
-					char* jmsg = cJSON_PrintUnformatted(jboot);
-					cJSON_Delete(jboot);
-					MQ::MQClient::publish(pub_topic, jmsg, strlen(jmsg)+1, &_publicationCb);
-					Heap::memFree(jmsg);
-					delete(notif);
-					Heap::memFree(pub_topic);
-					return State::HANDLED;
-				}
-				else{
-					DEBUG_TRACE_E(_EXPR_, _MODULE_, "ERROR al formar JsonParser::getJsonFromNotification(*notif)");
-					delete(notif);
-					Heap::memFree(pub_topic);
-					return State::HANDLED;
-				}
+				MBED_ASSERT(jboot);
+				MQ::MQClient::publish(pub_topic, jboot, sizeof(cJSON*), &_publicationCb);
+				cJSON_Delete(jboot);
 			}
-
-			MQ::MQClient::publish(pub_topic, notif, sizeof(Blob::NotificationData_t<Blob::LightBootData_t>), &_publicationCb);
+			else {
+				MQ::MQClient::publish(pub_topic, notif, sizeof(Blob::NotificationData_t<Blob::LightBootData_t>), &_publicationCb);
+			}
 			delete(notif);
 			Heap::memFree(pub_topic);
-
             return State::HANDLED;
         }
 
