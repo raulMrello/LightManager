@@ -117,7 +117,7 @@ void LightManager::eventSimulatorCb() {
 		if(_json_supported){
 			cJSON* jboot = JsonParser::getJsonFromNotification(*notif);
 			MBED_ASSERT(jboot);
-			MQ::MQClient::publish(pub_topic, jboot, sizeof(cJSON*), &_publicationCb);
+			MQ::MQClient::publish(pub_topic, &jboot, sizeof(cJSON**), &_publicationCb);
 			cJSON_Delete(jboot);
 		}
 		else{

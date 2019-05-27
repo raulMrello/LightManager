@@ -20,7 +20,6 @@ static const char* _MODULE_ = "[LightM]........";
  
 //------------------------------------------------------------------------------------
 void LightManager::subscriptionCb(const char* topic, void* msg, uint16_t msg_len){
-
     // si es un comando para actualizar los parámetros minmax...
     if(MQ::MQClient::isTokenRoot(topic, "set/cfg")){
         DEBUG_TRACE_D(_EXPR_, _MODULE_, "Recibido topic %s", topic);
@@ -30,7 +29,7 @@ void LightManager::subscriptionCb(const char* topic, void* msg, uint16_t msg_len
 		if(_json_supported){
 			req = (Blob::SetRequest_t<Blob::LightCfgData_t>*)Heap::memAlloc(sizeof(Blob::SetRequest_t<Blob::LightCfgData_t>));
 			MBED_ASSERT(req);
-			if(!(json_decoded = JsonParser::getSetRequestFromJson(*req, (cJSON*)msg))){
+			if(!(json_decoded = JsonParser::getSetRequestFromJson(*req, *(cJSON**)msg))){
 				Heap::memFree(req);
 				DEBUG_TRACE_W(_EXPR_, _MODULE_, "ERR_JSON. Decodificando el mensaje");
 			}
@@ -75,7 +74,7 @@ void LightManager::subscriptionCb(const char* topic, void* msg, uint16_t msg_len
 		if(_json_supported){
 			req = (Blob::SetRequest_t<Blob::LightStatData_t>*)Heap::memAlloc(sizeof(Blob::SetRequest_t<Blob::LightStatData_t>));
 			MBED_ASSERT(req);
-			if(!(json_decoded = JsonParser::getSetRequestFromJson(*req, (cJSON*)msg))){
+			if(!(json_decoded = JsonParser::getSetRequestFromJson(*req, *(cJSON**)msg))){
 				Heap::memFree(req);
 				DEBUG_TRACE_W(_EXPR_, _MODULE_, "ERR_JSON. Decodificando el mensaje");
 			}
@@ -120,7 +119,7 @@ void LightManager::subscriptionCb(const char* topic, void* msg, uint16_t msg_len
 		if(_json_supported){
 			req = (Blob::LightLuxLevel*)Heap::memAlloc(sizeof(Blob::LightLuxLevel));
 			MBED_ASSERT(req);
-			if(!(json_decoded = JsonParser::getObjFromJson(*req, (cJSON*)msg))){
+			if(!(json_decoded = JsonParser::getObjFromJson(*req, *(cJSON**)msg))){
 				Heap::memFree(req);
 				DEBUG_TRACE_W(_EXPR_, _MODULE_, "ERR_JSON. Decodificando el mensaje");
 			}
@@ -165,7 +164,7 @@ void LightManager::subscriptionCb(const char* topic, void* msg, uint16_t msg_len
 		if(_json_supported){
 			req = (Blob::LightTimeData_t*)Heap::memAlloc(sizeof(Blob::LightTimeData_t));
 			MBED_ASSERT(req);
-			if(!(json_decoded = JsonParser::getObjFromJson(*req, (cJSON*)msg))){
+			if(!(json_decoded = JsonParser::getObjFromJson(*req, *(cJSON**)msg))){
 				Heap::memFree(req);
 				DEBUG_TRACE_W(_EXPR_, _MODULE_, "ERR_JSON. Decodificando el mensaje");
 			}
@@ -210,7 +209,7 @@ void LightManager::subscriptionCb(const char* topic, void* msg, uint16_t msg_len
         if(_json_supported){
 			req = (Blob::GetRequest_t*)Heap::memAlloc(sizeof(Blob::GetRequest_t));
 			MBED_ASSERT(req);
-			if(!(json_decoded = JsonParser::getGetRequestFromJson(*req, (cJSON*)msg))){
+			if(!(json_decoded = JsonParser::getGetRequestFromJson(*req, *(cJSON**)msg))){
 				Heap::memFree(req);
 			}
         }
