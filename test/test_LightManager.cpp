@@ -71,6 +71,71 @@ TEST_CASE("Init & MQLib suscription..............", "[LightManager]") {
 }
 
 
+//------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------
+static void GetCfgLightCb(const char* topic, void* msg, uint16_t msg_len){
+	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Recibido mensaje en topic %s", topic);
+	TEST_ASSERT_EQUAL(msg_len, sizeof(Blob::Response_t<Blob::LightCfgData_t>));
+	Blob::Response_t<Blob::LightCfgData_t> *resp = (Blob::Response_t<Blob::LightCfgData_t>*) msg;
+	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Convirtiendo respuesta a json...");
+	cJSON* json = JsonParser::getDataFromObjTopic(topic, msg, msg_len);
+	TEST_ASSERT_NOT_NULL(json);
+	char *jtxt = cJSON_Print(json);
+	TEST_ASSERT_NOT_NULL(jtxt);
+	DEBUG_TRACE_I(_EXPR_, _MODULE_, "response=>%s", jtxt);
+	Heap::memFree(jtxt);
+	cJSON_Delete(json);
+	s_test_done = true;
+}
+TEST_CASE("Test get/cfg/light [blob]......................", "[LightManager]"){
+	MQ::ErrorResult res;
+
+	// desactiva soporte JSON
+	light->setJSONSupport(false);
+	TEST_ASSERT_FALSE(light->isJSONSupported());
+
+	// -----------------------------------------------
+	// borra flag de resultado
+	s_test_done = false;
+
+	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Suscription to stat/cfg/light");
+	res = MQ::MQClient::subscribe("stat/cfg/light", new MQ::SubscribeCallback(&GetCfgLightCb));
+	TEST_ASSERT_EQUAL(res, MQ::SUCCESS);
+
+	// solicita la configuración mediante un GetRequest
+	Blob::GetRequest_t greq;
+	greq.idTrans = 4;
+	greq._error.code = Blob::ErrOK;
+	greq._error.descr[0] = 0;
+	char *get_request = "{\"idTrans\": 1}";
+	uint16_t obj_size = 0;
+	Blob::GetRequest_t* obj = JsonParser::getObjFromDataTopic("/get/cfg/light", get_request, &obj_size);
+	TEST_ASSERT_NOT_NULL(obj);
+	TEST_ASSERT_EQUAL(obj_size, sizeof(Blob::GetRequest_t));
+	cJSON* json = JsonParser::getJsonFromObj(*obj);
+	TEST_ASSERT_NOT_NULL(json);
+	char *jtxt = cJSON_Print(json);
+	TEST_ASSERT_NOT_NULL(jtxt);
+	DEBUG_TRACE_I(_EXPR_, _MODULE_, "request=>%s", jtxt);
+	res = MQ::MQClient::publish("get/cfg/light", obj, obj_size, &s_published_cb);
+	TEST_ASSERT_EQUAL(res, MQ::SUCCESS);
+
+	// wait for response at least 10 seconds, yielding this thread
+	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Wait 10secs to get a response...");
+	double count = 0;
+	do{
+		Thread::wait(100);
+		count += 0.1;
+	}while(!s_test_done && count < 10);
+	TEST_ASSERT_TRUE(s_test_done);
+	Heap::memFree(jtxt);
+	cJSON_Delete(json);
+	Heap::memFree(obj);
+}
+
 //---------------------------------------------------------------------------
 /**
  * @brief Se verifican las publicaciones y suscripciones JSON, para ello el módulo
@@ -216,7 +281,7 @@ TEST_CASE("JSON support .........................", "[LightManager]"){
  */
 TEST_CASE("Blob support .........................", "[LightManager]"){
 
-	// activa soporte JSON
+	// desactiva soporte JSON
 	light->setJSONSupport(false);
 	TEST_ASSERT_FALSE(light->isJSONSupported());
 
@@ -438,11 +503,6 @@ static void executePrerequisites(){
 
 		// registra un manejador de publicaciones común
 		s_published_cb = callback(&publishedCb);
-
-		// se suscribe a todas las notificaciones de estado: stat/#
-		DEBUG_TRACE_I(_EXPR_, _MODULE_, "Suscription to stat/#");
-		res = MQ::MQClient::subscribe("stat/#", new MQ::SubscribeCallback(&subscriptionCb));
-		TEST_ASSERT_EQUAL(res, MQ::SUCCESS);
 
 		// inicia el subsistema NV
 		DEBUG_TRACE_I(_EXPR_, _MODULE_, "Init FSManager... ");
