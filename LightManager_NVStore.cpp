@@ -34,6 +34,7 @@ bool LightManager::checkIntegrity(){
 
 //------------------------------------------------------------------------------------
 void LightManager::setDefaultConfig(){
+	_lightdata.uid = UID_LIGHT_MANAGER;
 	// inicializo flags
 	_lightdata.cfg.updFlagMask = Blob::EnableLightCfgUpdNotif;
 	_lightdata.cfg.evtFlagMask = (Blob::LightEvtFlags)(Blob::LightOutOnEvt | Blob::LightOutOffEvt | Blob::LightOutLevelChangeEvt);
@@ -58,7 +59,7 @@ void LightManager::setDefaultConfig(){
 //------------------------------------------------------------------------------------
 void LightManager::restoreConfig(){
 	uint32_t crc = 0;
-
+	_lightdata.uid = UID_LIGHT_MANAGER;
 	// inicializa estado como apagado
 	_lightdata.stat.outValue = 0;
 	_lightdata.stat.flags = Blob::LightNoEvents;
@@ -221,36 +222,30 @@ void LightManager::_updateAndNotify(uint8_t value){
 
 
 // ----------------------------------------------------------------------------------
-void LightManager::_updateConfig(const Blob::LightCfgData_t& cfg, uint32_t keys, Blob::ErrorData_t& err){
-	if(keys == Blob::LightKeyNone){
-		err.code = Blob::ErrEmptyContent;
-		goto _updateConfigExit;
+void LightManager::_updateConfig(const light_manager& data, Blob::ErrorData_t& err){
+	if(data.cfg._keys & Blob::LightKeyCfgUpd){
+		_lightdata.cfg.updFlagMask = data.cfg.updFlagMask;
 	}
-
-	if(keys & Blob::LightKeyCfgUpd){
-		_lightdata.cfg.updFlagMask = cfg.updFlagMask;
+	if(data.cfg._keys & Blob::LightKeyCfgEvt){
+		_lightdata.cfg.evtFlagMask = data.cfg.evtFlagMask;
 	}
-	if(keys & Blob::LightKeyCfgEvt){
-		_lightdata.cfg.evtFlagMask = cfg.evtFlagMask;
+	if(data.cfg._keys & Blob::LightKeyCfgAls){
+		_lightdata.cfg.alsData = data.cfg.alsData;
 	}
-	if(keys & Blob::LightKeyCfgAls){
-		_lightdata.cfg.alsData = cfg.alsData;
+	if(data.cfg._keys & Blob::LightKeyCfgOutm){
+		_lightdata.cfg.outData.mode = data.cfg.outData.mode;
 	}
-	if(keys & Blob::LightKeyCfgOutm){
-		_lightdata.cfg.outData.mode = cfg.outData.mode;
+	if(data.cfg._keys & Blob::LightKeyCfgCurve){
+		_lightdata.cfg.outData.curve = data.cfg.outData.curve;
 	}
-	if(keys & Blob::LightKeyCfgCurve){
-		_lightdata.cfg.outData.curve = cfg.outData.curve;
+	if(data.cfg._keys & Blob::LightKeyCfgActs){
+		_lightdata.cfg.outData.numActions = data.cfg.outData.numActions;
+		for(int i=0;i<data.cfg.outData.numActions;i++)
+			_lightdata.cfg.outData.actions[data.cfg.outData.actions[i].id] = data.cfg.outData.actions[i];
 	}
-	if(keys & Blob::LightKeyCfgActs){
-		_lightdata.cfg.outData.numActions = cfg.outData.numActions;
-		for(int i=0;i<cfg.outData.numActions;i++)
-			_lightdata.cfg.outData.actions[cfg.outData.actions[i].id] = cfg.outData.actions[i];
+	if(data.cfg._keys & Blob::LightKeyCfgVerbosity){
+		_lightdata.cfg.verbosity = data.cfg.verbosity;
 	}
-	if(keys & Blob::LightKeyCfgVerbosity){
-		_lightdata.cfg.verbosity = cfg.verbosity;
-	}
-_updateConfigExit:
 	strcpy(err.descr, Blob::errList[err.code]);
 }
 

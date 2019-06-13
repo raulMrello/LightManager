@@ -20,11 +20,21 @@
 #include "calendar_objects.h"
   
 
+/** Versiones soportadas */
+#define VERS_LIGHT_YTL			0
+
+
+/** Selección de la versión utilizada 	*/
+/** DEFINIR SEGÚN APLICACIÓN 			*/
+#define VERS_LIGHT_SELECTED		VERS_LIGHT_YTL /*otras opciones*/
+
+/** Macro de generación de UIDs*/
+#define UID_LIGHT_MANAGER		(uint32_t)(0x00000005 | ((uint32_t)VERS_LIGHT_SELECTED << 20))
 
 namespace Blob {
 
 /** Valor para identificar acciones vacías, cuyo id es inválido y por lo tanto descartables */
-static const int8_t InvalidActionId = -1;
+static const int8_t LightInvalidActionId = -1;
 
 /** Número de puntos de la curva de activación de la carga */
 static const uint8_t LightCurveSampleCount = 11;
@@ -176,6 +186,7 @@ struct __packed LightCfgData_t{
 	LightAlsData_t alsData;
   	LightOutData_t outData;
 	esp_log_level_t verbosity;
+	uint8_t _keys;
 };
 
 
@@ -194,6 +205,7 @@ struct __packed LightStatData_t{
 /** Estructura de datos asociado al boot
  */
 struct __packed LightBootData_t{
+	uint32_t uid;
 	LightCfgData_t cfg;
 	LightStatData_t stat;
 };
@@ -203,8 +215,18 @@ typedef calendar_clock LightTimeData_t;
 
 }	// end namespace Blob
 
+typedef Blob::LightBootData_t light_manager;
+typedef Blob::LightCfgData_t light_manager_cfg;
+typedef Blob::LightStatData_t light_manager_stat;
 
 namespace JSON {
+
+/**
+ * Codifica el objeto en un JSON
+ * @param obj Objeto
+ * @return JSON resultante o NULL en caso de error
+ */
+cJSON* getJsonFromLightManager(const Blob::LightBootData_t& obj, ObjDataSelection type);
 
 /**
  * Codifica la configuración actual en un objeto JSON
@@ -221,13 +243,6 @@ cJSON* getJsonFromLightCfg(const Blob::LightCfgData_t& cfg);
 cJSON* getJsonFromLightStat(const Blob::LightStatData_t& stat);
 
 /**
- * Codifica el estado de arranque en un objeto JSON
- * @param boot Estado de arranque
- * @return Objeto JSON o NULL en caso de error
- */
-cJSON* getJsonFromLightBoot(const Blob::LightBootData_t& boot);
-
-/**
  * Codifica la configuración de la célula ALS en un objeto JSON
  * @param lux Configuración ALS
  * @return Objeto JSON o NULL en caso de error
@@ -240,6 +255,42 @@ cJSON* getJsonFromLightLux(const Blob::LightLuxLevel& lux);
  * @return Objeto JSON o NULL en caso de error
  */
 cJSON* getJsonFromLightTime(const Blob::LightTimeData_t& t);
+
+
+/**
+ * Codifica el objeto en un JSON dependiendo del tipo de objeto
+ * @param obj Objeto
+ * @return JSON resultante o NULL en caso de error
+ */
+template <typename T>
+cJSON* getJsonFromLight(const T& obj, ObjDataSelection type){
+	if (std::is_same<T, Blob::LightBootData_t>::value){
+		return getJsonFromLightManager((const Blob::LightBootData_t&)obj, type);
+	}
+	if (std::is_same<T, Blob::LightCfgData_t>::value && type != ObjSelectState){
+		return getJsonFromLightCfg((const Blob::LightCfgData_t&)obj);
+	}
+	if (std::is_same<T, Blob::LightStatData_t>::value && type != ObjSelectCfg){
+		return getJsonFromLightStat((const Blob::LightStatData_t&)obj);
+	}
+	if (std::is_same<T, Blob::LightLuxLevel>::value){
+		return JSON::getJsonFromLightLux((const Blob::LightLuxLevel&)obj);
+	}
+	if (std::is_same<T, Blob::LightTimeData_t>::value){
+		return JSON::getJsonFromLightTime((const Blob::LightTimeData_t&)obj);
+	}
+
+	return NULL;
+}
+
+
+/**
+ * Decodifica el mensaje JSON en un objeto
+ * @param obj Recibe el objeto decodificado
+ * @param json Objeto JSON a decodificar
+ * @return keys Parámetros decodificados o 0 en caso de error
+ */
+uint32_t getLightManagerFromJson(Blob::LightBootData_t &obj, cJSON* json);
 
 /**
  * Decodifica el mensaje JSON en un objeto de configuración
@@ -258,14 +309,6 @@ uint32_t getLightCfgFromJson(Blob::LightCfgData_t &obj, cJSON* json);
 uint32_t getLightStatFromJson(Blob::LightStatData_t &obj, cJSON* json);
 
 /**
- * Decodifica el mensaje JSON en un objeto de arranque
- * @param obj Recibe el objeto decodificado
- * @param json Objeto JSON a decodificar
- * @return keys Parámetros decodificados o 0 en caso de error
- */
-uint32_t getLightBootFromJson(Blob::LightBootData_t &obj, cJSON* json);
-
-/**
  * Decodifica el mensaje JSON en un objeto de configuración ALS
  * @param obj Recibe el objeto decodificado
  * @param json Objeto JSON a decodificar
@@ -281,6 +324,29 @@ uint32_t getLightLuxFromJson(Blob::LightLuxLevel &obj, cJSON* json);
  */
 uint32_t getLightTimeFromJson(Blob::LightTimeData_t &obj, cJSON* json);
 
+
+template <typename T>
+uint32_t getLightObjFromJson(T& obj, cJSON* json_obj){
+	if (std::is_same<T, Blob::LightBootData_t>::value){
+		return JSON::getLightManagerFromJson((Blob::LightBootData_t&)obj, json_obj);
+	}
+	if (std::is_same<T, Blob::LightCfgData_t>::value){
+		return JSON::getLightCfgFromJson((Blob::LightCfgData_t&)obj, json_obj);
+	}
+	if (std::is_same<T, Blob::LightStatData_t>::value){
+		return JSON::getLightStatFromJson((Blob::LightStatData_t&)obj, json_obj);
+	}
+	// decodifica objeto de configuraciï¿½n ALS
+	if (std::is_same<T, Blob::LightLuxLevel>::value){
+		return JSON::getLightLuxFromJson((Blob::LightLuxLevel&)obj, json_obj);
+	}
+	// decodifica objeto de evento temporal
+	if (std::is_same<T, Blob::LightTimeData_t>::value){
+		return JSON::getLightTimeFromJson((Blob::LightTimeData_t&)obj, json_obj);
+	}
+
+	return 0;
+}
 
 }	// end namespace JSON
 

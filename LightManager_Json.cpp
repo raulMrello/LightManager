@@ -25,6 +25,38 @@ static const char* _MODULE_ = "[LightM]........";
 namespace JSON {
 
 //------------------------------------------------------------------------------------
+cJSON* getJsonFromLightManager(const Blob::LightBootData_t& obj, ObjDataSelection type){
+	cJSON* json = NULL;
+	cJSON* item = NULL;
+	if((json=cJSON_CreateObject()) == NULL){
+		return NULL;
+	}
+
+	// uid
+	cJSON_AddNumberToObject(json, JsonParser::p_uid, obj.uid);
+
+	// cfg
+	if(type != ObjSelectState){
+		if((item = getJsonFromLightCfg(obj.cfg)) == NULL){
+			cJSON_Delete(json);
+			return NULL;
+		}
+		cJSON_AddItemToObject(json, JsonParser::p_cfg, item);
+	}
+
+	// stat
+	if(type != ObjSelectCfg){
+		if((item = getJsonFromLightStat(obj.stat)) == NULL){
+			cJSON_Delete(json);
+			return NULL;
+		}
+		cJSON_AddItemToObject(json, JsonParser::p_stat, item);
+	}
+
+	return json;
+}
+
+//------------------------------------------------------------------------------------
 cJSON* getJsonFromLightCfg(const Blob::LightCfgData_t& cfg){
 	cJSON *alsData = NULL;
 	cJSON *outData = NULL;
@@ -165,29 +197,6 @@ cJSON* getJsonFromLightStat(const Blob::LightStatData_t& stat){
 
 
 //------------------------------------------------------------------------------------
-cJSON* getJsonFromLightBoot(const Blob::LightBootData_t& boot){
-	cJSON* json = NULL;
-	cJSON* item = NULL;
-	if((json=cJSON_CreateObject()) == NULL){
-		return NULL;
-	}
-
-	if((item = getJsonFromLightCfg(boot.cfg)) == NULL){
-		cJSON_Delete(json);
-		return NULL;
-	}
-	cJSON_AddItemToObject(json, JsonParser::p_cfg, item);
-
-	if((item = getJsonFromLightStat(boot.stat)) == NULL){
-		cJSON_Delete(json);
-		return NULL;
-	}
-	cJSON_AddItemToObject(json, JsonParser::p_stat, item);
-	return json;
-}
-
-
-//------------------------------------------------------------------------------------
 cJSON* getJsonFromLightLux(const Blob::LightLuxLevel& lux){
 	cJSON* json = NULL;
 	if((json=cJSON_CreateObject()) == NULL){
@@ -205,6 +214,34 @@ cJSON* getJsonFromLightTime(const Blob::LightTimeData_t& t){
 
 
 //------------------------------------------------------------------------------------
+uint32_t getLightManagerFromJson(Blob::LightBootData_t &obj, cJSON* json){
+	uint32_t keys = 0;
+	uint32_t subkey = 0;
+	cJSON* value = NULL;
+	if(json == NULL){
+		return 0;
+	}
+
+	// uid
+	if((value = cJSON_GetObjectItem(json,JsonParser::p_uid)) != NULL){
+		obj.uid = value->valueint;
+		keys |= (1 << 0);
+	}
+	// cfg
+	if((value = cJSON_GetObjectItem(json, JsonParser::p_cfg)) != NULL){
+		subkey = getLightCfgFromJson(obj.cfg, value)? (1 << 1) : 0;
+		keys |= subkey;
+	}
+	// stat
+	if((value = cJSON_GetObjectItem(json, JsonParser::p_stat)) != NULL){
+		subkey = getLightStatFromJson(obj.stat, value)? (1 << 2) : 0;
+		keys |= subkey;
+	}
+
+	return keys;
+}
+
+//------------------------------------------------------------------------------------
 uint32_t getLightCfgFromJson(Blob::LightCfgData_t &cfg, cJSON* json){
 	cJSON *alsData = NULL;
 	cJSON *outData = NULL;
@@ -214,6 +251,7 @@ uint32_t getLightCfgFromJson(Blob::LightCfgData_t &cfg, cJSON* json){
 	cJSON *item = NULL;
 	cJSON *obj = NULL;
 	uint32_t keys = Blob::LightKeyNone;
+	cfg._keys = 0;
 
 	if((obj = cJSON_GetObjectItem(json, JsonParser::p_updFlags)) != NULL){
 		cfg.updFlagMask = (Blob::LightUpdFlags)obj->valueint;
@@ -310,6 +348,7 @@ uint32_t getLightCfgFromJson(Blob::LightCfgData_t &cfg, cJSON* json){
 			}
 		}
 	}
+	cfg._keys = keys;
 	return keys;
 }
 
@@ -330,23 +369,8 @@ uint32_t getLightStatFromJson(Blob::LightStatData_t &stat, cJSON* json){
 
 	return 1;
 }
-//------------------------------------------------------------------------------------
-uint32_t getLightBootFromJson(Blob::LightBootData_t &obj, cJSON* json){
-	cJSON* cfg = NULL;
-	cJSON* stat = NULL;
-	uint32_t keys = 0;
 
-	if(json == NULL){
-		return 0;
-	}
-	if((cfg = cJSON_GetObjectItem(json, JsonParser::p_cfg)) != NULL){
-		keys |= getLightCfgFromJson(obj.cfg, cfg);
-	}
-	if((stat = cJSON_GetObjectItem(json, JsonParser::p_stat)) != NULL){
-		keys |= getLightStatFromJson(obj.stat, stat);
-	}
-	return keys;
-}
+
 
 //------------------------------------------------------------------------------------
 uint32_t getLightLuxFromJson(Blob::LightLuxLevel &lux, cJSON* json){

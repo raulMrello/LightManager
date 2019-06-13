@@ -220,11 +220,10 @@ class LightManager : public ActiveModule {
 
 	/** Actualiza la configuración
 	 *
-	 * @param cfg Nueva configuración a aplicar
-	 * @param keys Flags de parámetros actualizados
+	 * @param data Nueva configuración a aplicar
 	 * @param err Recibe los errores generados durante la actualización
 	 */
-	void _updateConfig(const Blob::LightCfgData_t& cfg, uint32_t keys, Blob::ErrorData_t& err);
+	void _updateConfig(const light_manager& data, Blob::ErrorData_t& err);
 
 };
      

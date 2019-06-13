@@ -57,10 +57,10 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 
         // Procesa datos recibidos de la publicación en cmd/$BASE/cfg/set
         case RecvCfgSet:{
-        	Blob::SetRequest_t<Blob::LightCfgData_t>* req = (Blob::SetRequest_t<Blob::LightCfgData_t>*)st_msg->msg;
+        	Blob::SetRequest_t<light_manager>* req = (Blob::SetRequest_t<light_manager>*)st_msg->msg;
 			// si no hay errores, actualiza la configuración
 			if(req->_error.code == Blob::ErrOK){
-				_updateConfig(req->data, req->keys, req->_error);
+				_updateConfig(req->data, req->_error);
 			}
         	// si hay errores en el mensaje o en la actualización, devuelve resultado sin hacer nada
         	if(req->_error.code != Blob::ErrOK){
@@ -68,16 +68,16 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 				MBED_ASSERT(pub_topic);
 				sprintf(pub_topic, "stat/cfg/%s", _pub_topic_base);
 
-				Blob::Response_t<Blob::LightCfgData_t>* resp = new Blob::Response_t<Blob::LightCfgData_t>(req->idTrans, req->_error, _lightdata.cfg);
+				Blob::Response_t<light_manager>* resp = new Blob::Response_t<light_manager>(req->idTrans, req->_error, _lightdata);
 
 				if(_json_supported){
-					cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
+					cJSON* jresp = JsonParser::getJsonFromResponse(*resp, ObjSelectCfg);
 					MBED_ASSERT(jresp);
 					MQ::MQClient::publish(pub_topic, &jresp, sizeof(cJSON**), &_publicationCb);
 					cJSON_Delete(jresp);
 				}
 				else{
-					MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<Blob::LightCfgData_t>), &_publicationCb);
+					MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<light_manager>), &_publicationCb);
 				}
 				delete(resp);
 				Heap::memFree(pub_topic);
@@ -94,16 +94,16 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 				char* pub_topic = (char*)Heap::memAlloc(MQ::MQClient::getMaxTopicLen());
 				MBED_ASSERT(pub_topic);
 				sprintf(pub_topic, "stat/cfg/%s", _pub_topic_base);
-				Blob::Response_t<Blob::LightCfgData_t>* resp = new Blob::Response_t<Blob::LightCfgData_t>(req->idTrans, req->_error, _lightdata.cfg);
+				Blob::Response_t<light_manager>* resp = new Blob::Response_t<light_manager>(req->idTrans, req->_error, _lightdata);
 
 				if(_json_supported){
-					cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
+					cJSON* jresp = JsonParser::getJsonFromResponse(*resp, ObjSelectCfg);
 					MBED_ASSERT(jresp);
 					MQ::MQClient::publish(pub_topic, &jresp, sizeof(cJSON**), &_publicationCb);
 					cJSON_Delete(jresp);
 				}
 				else{
-					MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<Blob::LightCfgData_t>), &_publicationCb);
+					MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<light_manager>), &_publicationCb);
 				}
 				delete(resp);
 				Heap::memFree(pub_topic);
@@ -114,11 +114,11 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 
         // Procesa datos recibidos de la publicación en cmd/$BASE/value/set
         case RecvStatSet:{
-        	Blob::SetRequest_t<Blob::LightStatData_t>* req = (Blob::SetRequest_t<Blob::LightStatData_t>*)st_msg->msg;
+        	Blob::SetRequest_t<light_manager>* req = (Blob::SetRequest_t<light_manager>*)st_msg->msg;
         	// si el mensaje recibido no tiene errores de preprocesado continúa
         	if(req->_error.code == Blob::ErrOK){
 				// actualiza el estado de la luminaria
-				uint8_t value =  req->data.outValue;
+				uint8_t value =  req->data.stat.outValue;
 				// si la salida está fuera de rango, no hace nada y devuelve un error
 				if(value > Blob::LightActionOutMax){
 					req->_error.code = Blob::ErrRangeValue;
@@ -151,16 +151,16 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
         	char* pub_topic = (char*)Heap::memAlloc(MQ::MQClient::getMaxTopicLen());
 			MBED_ASSERT(pub_topic);
 			sprintf(pub_topic, "stat/value/%s", _pub_topic_base);
-			Blob::Response_t<Blob::LightStatData_t>* resp = new Blob::Response_t<Blob::LightStatData_t>(req->idTrans, req->_error, _lightdata.stat);
+			Blob::Response_t<light_manager>* resp = new Blob::Response_t<light_manager>(req->idTrans, req->_error, _lightdata);
 			MBED_ASSERT(resp);
 			if(_json_supported){
-				cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
+				cJSON* jresp = JsonParser::getJsonFromResponse(*resp, ObjSelectState);
 				MBED_ASSERT(jresp);
 				MQ::MQClient::publish(pub_topic, &jresp, sizeof(cJSON**), &_publicationCb);
 				cJSON_Delete(jresp);
 			}
 			else{
-				MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<Blob::LightStatData_t>), &_publicationCb);
+				MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<light_manager>), &_publicationCb);
 			}
 			delete(resp);
 			Heap::memFree(pub_topic);
@@ -177,16 +177,16 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 			sprintf(pub_topic, "stat/cfg/%s", _pub_topic_base);
 
 			// responde con los datos solicitados y con los errores (si hubiera) de la decodificación de la solicitud
-			Blob::Response_t<Blob::LightCfgData_t>* resp = new Blob::Response_t<Blob::LightCfgData_t>(req->idTrans, req->_error, _lightdata.cfg);
+			Blob::Response_t<light_manager>* resp = new Blob::Response_t<light_manager>(req->idTrans, req->_error, _lightdata);
 			MBED_ASSERT(resp);
 			if(_json_supported){
-				cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
+				cJSON* jresp = JsonParser::getJsonFromResponse(*resp, ObjSelectCfg);
 				MBED_ASSERT(jresp);
 				MQ::MQClient::publish(pub_topic, &jresp, sizeof(cJSON**), &_publicationCb);
 				cJSON_Delete(jresp);
 			}
 			else{
-				MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<Blob::LightCfgData_t>), &_publicationCb);
+				MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<light_manager>), &_publicationCb);
 			}
 			delete(resp);
 			Heap::memFree(pub_topic);
@@ -204,20 +204,20 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
 			DEBUG_TRACE_I(_EXPR_, _MODULE_, "Respondiendo datos de estado solicitados");
 
 			// responde con los datos solicitados y con los errores (si hubiera) de la decodificación de la solicitud
-			Blob::Response_t<Blob::LightStatData_t>* resp = new Blob::Response_t<Blob::LightStatData_t>(req->idTrans, req->_error, _lightdata.stat);
+			Blob::Response_t<light_manager>* resp = new Blob::Response_t<light_manager>(req->idTrans, req->_error, _lightdata);
 			MBED_ASSERT(resp);
 
 			// borra los flags de evento ya que es una respuesta sin más
-			resp->data.flags = Blob::LightNoEvents;
+			resp->data.stat.flags = Blob::LightNoEvents;
 
 			if(_json_supported){
-				cJSON* jresp = JsonParser::getJsonFromResponse(*resp);
+				cJSON* jresp = JsonParser::getJsonFromResponse(*resp, ObjSelectState);
 				MBED_ASSERT(jresp);
 				MQ::MQClient::publish(pub_topic, &jresp, sizeof(cJSON**), &_publicationCb);
 				cJSON_Delete(jresp);
 			}
 			else {
-				MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<Blob::LightStatData_t>), &_publicationCb);
+				MQ::MQClient::publish(pub_topic, resp, sizeof(Blob::Response_t<light_manager>), &_publicationCb);
 			}
 			delete(resp);
 			Heap::memFree(pub_topic);
@@ -229,16 +229,16 @@ State::StateResult LightManager::Init_EventHandler(State::StateEvent* se){
         	char* pub_topic = (char*)Heap::memAlloc(MQ::MQClient::getMaxTopicLen());
 			MBED_ASSERT(pub_topic);
 			sprintf(pub_topic, "stat/boot/%s", _pub_topic_base);
-			Blob::NotificationData_t<Blob::LightBootData_t> *notif = new Blob::NotificationData_t<Blob::LightBootData_t>(_lightdata);
+			Blob::NotificationData_t<light_manager> *notif = new Blob::NotificationData_t<light_manager>(_lightdata);
 			MBED_ASSERT(notif);
 			if(_json_supported){
-				cJSON* jboot = JsonParser::getJsonFromNotification(*notif);
+				cJSON* jboot = JsonParser::getJsonFromNotification(*notif, ObjSelectAll);
 				MBED_ASSERT(jboot);
 				MQ::MQClient::publish(pub_topic, &jboot, sizeof(cJSON**), &_publicationCb);
 				cJSON_Delete(jboot);
 			}
 			else {
-				MQ::MQClient::publish(pub_topic, notif, sizeof(Blob::NotificationData_t<Blob::LightBootData_t>), &_publicationCb);
+				MQ::MQClient::publish(pub_topic, notif, sizeof(Blob::NotificationData_t<light_manager>), &_publicationCb);
 			}
 			delete(notif);
 			Heap::memFree(pub_topic);
